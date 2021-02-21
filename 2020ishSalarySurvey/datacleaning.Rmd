@@ -1,0 +1,116 @@
+---
+title: "clean_data.Rmd"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+rm(list = ls())
+library(dplyr)
+```
+
+# Read in Data
+
+We manually pulled a csv out of Alchemer and stored that data in a 
+Google Sheet, along with some manually created helper tabs for translating
+column names and coding free text data. 
+
+```{r}
+# currently using interactive/ in browser auth 
+# whoever is running this code must have access to the gsheet
+url <- 'https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M/edit'
+
+data <- googlesheets4::read_sheet(url, sheet = 'Data')
+columns <- googlesheets4::read_sheet(url, sheet = 'Columns')
+questions <- googlesheets4::read_sheet(url, sheet = 'Questions')
+freetext <- googlesheets4::read_sheet(url, sheet = 'Free Text')
+```
+
+# Update Column Names and Values
+
+## Create Helper DF of Clean Column Names
+
+We manually re-coded column names in the above google sheet, with 
+one tab at the question level and one tab at the response level, to 
+deal with multi-select questions that are stored spread across multiple columns. 
+
+Now, we need to join the question and response level tabs together to form a 
+complete key, then use the values in that key to replace the column names 
+currently on the main dataframe. 
+
+```{r}
+
+# join question and response helper tabs
+name_helper <- questions %>% full_join(
+  columns,
+  by = "question_name"
+)
+
+# create useful column names for multi-select questions
+# format: question_name.resp.response_text
+# later on, we will use the .resp. separator to transform only these
+# multi-select columns
+
+name_helper$col_name_final <- stringr::str_c(
+  snakecase::to_snake_case(name_helper$question_name_short), 
+  ".resp.", 
+  snakecase::to_snake_case(name_helper$col_name_clean)
+)
+
+# combine new names for multi-select and single-select question cols
+name_helper$col_name_final <- coalesce(
+  name_helper$col_name_final, 
+  snakecase::to_snake_case(name_helper$question_name_short)
+)
+
+# clean up environment
+rm(columns, questions)
+```
+
+Next, we use the newly created column names as key-value pairs, and substitute
+the current column names for their more helpful versions. 
+
+```{r}
+
+# TODO: Fix join such that we capture all columns 
+  # R imported any duplicated column names with an extra # identifier on the end
+  # so those columns did not match in the join, and ended up with null colnames
+
+# replace original names with updated versions, matching on old names
+names(data) <- name_helper$col_name_final[
+  match(names(data), name_helper$col_name_original)
+] 
+
+# until we resolve the above error, remove cols with NA as their name 
+keep_cols <- names(data)[!is.na(names(data))]
+
+df <- data %>% 
+  select(
+    all_of(keep_cols)
+  )
+```
+
+Alchemer stores the response to the multi-select question as the text of
+the response, but we want to transform these to a boolean for easy counting. 
+For example, in the column `negotiation_result.resp.increased_money`, 
+we set `Yes, I increased my compensation` to be `TRUE`. Missing values are NA. 
+
+```{r}
+# Among columns for multi-select responses, turn text to TRUE
+df <- df %>% mutate(
+  across(
+    contains(".resp."), # apply only to multi-select columns 
+    ~ifelse(!is.na(.x), TRUE, NA)
+  )
+)
+```
+
+# Create Dummy Variables 
+
+# Write Clean Data To GoogleSheet
+
+```{r}
+googlesheets4::write_sheet(df, url, sheet = 'data_clean')
+```
+
