@@ -10,26 +10,24 @@ output:
       collapsed: true
 ---
 
-To Dos: 
--=
-- do current subsetting 
-
-- skills_comfort.resp.web_dev needs to be updated
-- people with outliers. should keep in universe or make that value NULL? 
-- response crosstabs (management x gender)
-- to the mutliselect variables, pick 
+**To Dos:**
 
 * Figure out alt ways of naming the gender bin values
+* Professional Development: For what PD did you use, only sel
+* Work experience: Continue to look into outliers 
+* salary crosstab for % writing code?
+* Tools and Skills by Gender? 
+* Figure out data viz options, so it is less text heavy
 
 Functions: 
-* Create salary crosstab function (need to convert Mean to currency)
-* tt function: Remove lines between variables
-* histogram function: add mean line 
-* For multiple response question function, add N for each response 
-* Create negotiation x demographic crosstab function 
-* Create binar
 
-- better logic for salary crosstabs median
+* Create salary crosstab function (need to convert Mean to currency, give option to order values)
+* tt function: Remove lines between variables. Add argument to remove NAs
+* histogram function: add mean line 
+* For multiple response question function, add N for each response, make the output prettier + have the option to order values by a prespecified ordering 
+* Create negotiation x demographic crosstab function 
+* Create a management x demographic crosstab function 
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -71,13 +69,51 @@ source("functions/salary_cross.R")
 ```{r, message = FALSE, echo = FALSE }
 # Subset to Survey Universe 
 
+df$work_in_politics <- as.character(df$work_in_politics)
+
+df <- df %>% 
+  ## 1) Respondents were only eligible to take this survey if (1) they worked in progressive politics 
+  filter(!is.na(work_in_politics), # didnt answer the question
+         work_in_politics == "Yes" |
+           work_in_politics == "Did but employment ended post-election") %>% 
+## 2) AND if their organization, role, or team focused on data, analytics, or technology.
+  filter(
+    # remove people who didnt anwser the question 
+    !is.na(data_40_org), 
+    !is.na(data_40_team), 
+    !is.na(data_40_role),
+    # remove people who answered 'No' to all three questions
+         data_40_org != 'No' | 
+           data_40_team != 'No' |
+           data_40_role != 'No')
+
+
 
 # Salary
-## If someone select 0 as a salary, code as NA. 
+## TODO: Figure out how to deal with outlier salary values
 
+# Years of Experience 
+## TODO: Figure out how to deal with outlier years of experience 
+df$years_worked_data[!is.na(df$years_worked_data) & 
+                       df$years_worked_data >= 35
+                       ] <- NA 
 
+df$years_worked_political_data[!is.na(df$years_worked_data) & 
+                       df$years_worked_political_data >= 35
+                       ] <- NA 
+df$years_worked_political[!is.na(df$years_worked_data) & 
+                       df$years_worked_political >= 35
+                       ] <- NA 
 
 ```
+
+
+Respondents: 
+
+* Number of people who completed the survey: `r nrow(df[df$status == "Complete",])`
+
+* Number of people who partially completed the survey:`r nrow(df[df$status == "Partial",])`
+
 
 
 ```{r, message = FALSE, echo = FALSE }
@@ -188,18 +224,18 @@ tt(df$gender, order_prop = T)
 **What is your race / ethnicity? Please select all that apply.**
 
 ToDo: Break out 'Other/Prefer Not to Say/Missing' into separate categories 
-```{r}
+```{r, message = FALSE, echo = FALSE }
 tt(df$race_bin, order_prop = T)
 ```
 
 
-```{r}
+```{r, message = FALSE, echo = FALSE }
 tt(df$race_bin2, order_prop = T)
 ```
 
 
 ### Immigration Status 
-How long have you or your family lived in the United States?
+**How long have you or your family lived in the United States?**
 
 ```{r, message = FALSE, echo = FALSE }
 tt(df$immigration, order_prop = T)
@@ -207,13 +243,13 @@ tt(df$immigration, order_prop = T)
 
 ### Age 
 **What is your year (YYYY) of birth?**
-```{r}
+```{r, message = FALSE, echo = FALSE }
 median_hist(df$age, x_label = "Age", 
             med_label = "The median age is")
 ```
 
 
-```{r}
+```{r, message = FALSE, echo = FALSE }
 tt(df$age_bin, order_prop = F)
 ```
 
@@ -324,6 +360,8 @@ median_hist(
 
 ## Employment Status {.tabset}
 
+TO DO: Combine current status + during 2020 election cycle into a data viz. Something like this: https://www.crackthecode.io/salary2017#appendix
+
 ### Current Status 
 **What is your current employment status (as of January 2021)?**
 ```{r, message = FALSE, echo = FALSE }
@@ -366,14 +404,14 @@ tt(df$data_40_role)
 ## Organization Type 
 **How would you describe the organization?**
 ```{r, message = FALSE, echo = FALSE }
-tt(df$org_type, order_prop = T) 
+tt(df$org_type, order_prop = T, last_ord = 'Other') 
 ```
 
 
 ## Primary Job Function 
 **What is your primary job function? If in management, please indicate the primary job function of your team.** 
 ```{r, message = FALSE, echo = FALSE }
-tt(df$job_team_function, order_prop = T) 
+tt(df$job_team_function, order_prop = T, last_ord = 'Other') 
 ```
 
 ## Seniority 
@@ -382,13 +420,13 @@ tt(df$job_team_function, order_prop = T)
 ```{r, message = FALSE, echo = FALSE }
 tt(df$seniority_level,
    lvls = c(
-     "Other",
-     "Freelance", 
      "Entry-Level",
      "Mid-Level", 
      "Senior-Level, but not Department Head", 
      "Department Head", 
-     "Organization Head, President or C-Level"),
+     "Organization Head, President or C-Level", 
+      "Other",
+     "Freelance"),
    order_prop = F) 
 ```
 
@@ -407,7 +445,8 @@ tt(df$num_staffers, order_prop = F,
 ```
 
 ### By Gender 
-ToDO: deal with this error message : Vectorizing 'formattable' elements may not preserve their attributes
+TODO
+error message : Vectorizing 'formattable' elements may not preserve their attributes
 
 <!-- ```{r, message = FALSE, echo = FALSE } -->
 <!-- by_demo <- df %>%  select(num_staffers, gender) %>% -->
@@ -476,7 +515,8 @@ TODO:
 
 * make this into a function (add the ability to order, add x-axis values)
 * figure out alternative data visualizations 
-
+* remove 'Freelance' and 'Other' 
+* add N-size to graphs
 ```{r, message = FALSE, echo = FALSE }
 tmp <- df[which(!is.na(df$perc_time_coding) &
                   !is.na(df$seniority_level)),] 
@@ -502,6 +542,12 @@ ggplot(tmp, aes(x = perc_time_coding, y = seniority_level)) +
 ```
 
 ### By Job Type 
+
+TODO: 
+
+* Figure out a way to bin job_team_function
+* add N-size to graphs
+
 ```{r, message = FALSE, echo = FALSE }
 tmp <- df[which(!is.na(df$perc_time_coding) &
                   !is.na(df$job_team_function)),]
@@ -528,10 +574,9 @@ How comfortable are you with the following skills and tools?
 
 ## Skills + Tools {.tabset}
 
-### Skills 
+### Skills + Tools
 
-Data cleaning code needs to be updated. 
-
+TODO
 
 ### Learn 
 **How did you learn the skills and tools you use weekly for your job? Please pick your top two options** 
@@ -572,8 +617,7 @@ mult_resp(tmp, "projects_done_management", order_prop = T)
 
 
 ### Management
-Need to add in none of the above responses. 
-
+TODO: Add in "none of the above" responses. 
 
 ```{r, message = FALSE, echo = FALSE }
 tmp <- select(
@@ -593,6 +637,45 @@ mult_resp(tmp, "projects_done_management", order_prop = T)
 ### Free Text 
 
 # Salary Overview 
+
+```{r, message = FALSE, echo = FALSE }
+df1 <- df %>%
+  mutate( variable = "All") %>%
+  select( variable, compensation, compensation_bin, compensation_bin_numeric) %>%
+  # remove anyone that is missing gender or salary data 
+   filter(!is.na(variable), !is.na(compensation), !is.na(compensation_bin)) %>%
+  # order df, so that smallest salaries are at the top 
+  arrange((compensation))
+
+srg_table <- df1  %>%
+group_by(variable) %>%
+summarise(
+  mean = mean(compensation),
+  median_numeric = round(median(compensation_bin_numeric), 0),
+  n = n()
+  ) %>% 
+  ## add in the bin range associated with the median value 
+  left_join(
+    compensation_bin_crosswalk, 
+    by = c("median_numeric" = "compensation_bin_numeric")
+    ) %>% 
+  # select only the necessary columns 
+  select(variable, n, mean, median = compensation_bin) %>%
+  # clean-up output
+      rename(' ' = variable,
+             'N' = n, 
+             'Mean' = mean, 
+             'Median' = median) %>%
+      formattable::formattable(
+        list(N = formattable::proportion_bar()), 
+       # Mean = formattable::currency(Mean),
+        align = c('l', 'r', 'r', 'r'))
+
+srg_table
+
+
+```
+
 
 ## Salary Distribution {.tabset}
 
@@ -618,29 +701,30 @@ tt(df$negotiate_yesno)
 ```
 
 #### By Gender 
-TK 
+TODO
 
 #### By Race
-TK
+TODO
 
 **Was your negotiation successful? Please select all that apply.**
+
 #### Overall 
 ```{r, message = FALSE, echo = FALSE }
 mult_resp(df, "negotiation_result")
 ```
 
 #### By Gender 
-TK 
+TODO
 
 #### By Race
-TK
+TODO
 
 ## Professional Development {.tabset}
 
 ### Opportunity
 **Does your employer offer any career development opportunities?**
 ```{r, message = FALSE, echo = FALSE }
-tt(df$prof_dev_available.resp.tution_reimbursement)
+tt(df$prof_dev_yesno, last_ord = c('Not sure', 'Missing'), order_prop = T)
 ```
 
 
@@ -654,52 +738,12 @@ mult_resp(df, "prof_dev_available", order_prop = T)
 ### Used 
 **Which of these professional development opportunities have you used? Please select all that apply.**
 
-to do: add logic to only count responses where the Available was select 
+TODO: Add logic to valid response. People should only select values that they selected in prof_dev_available. 
+
 ```{r, message = FALSE, echo = FALSE }
 mult_resp(df, "prof_dev_used", order_prop = T)
 ```
 
-# Covid 
-Not sure if it should be its own section or nested with something else
-
-## Additional Benefits
-**Regardless of whether you were eligible, did your employer offer any additional benefits due to the COVID-19 pandemic?**
-```{r, message = FALSE, echo = FALSE }
-tt(df$covid_benefits_yesno)
-```
-
-## Benefits Offered 
-**What sort of benefits were offered/provided? Please select all that apply.**
-```{r, message = FALSE, echo = FALSE }
-mult_resp(df, "covid_benefits_specific", order_prop = T)
-```
-
-## Free Text 
-**Please briefly describe how your organization handled the COVID-19 pandemic to make things easier for staff. **
-
-TK 
-
-# Union 
-Not sure if it should be its own section or nested with something else 
-
-## Is Unionized? 
-**Is your organization unionized or does it have one or more recognized bargaining units?**
-```{r, message = FALSE, echo = FALSE }
-tt(df$is_unionized)
-```
-
-## Union Member? 
-**Are you a member of the union/bargaining unit?**
-```{r, message = FALSE, echo = FALSE }
-tt(df$bargaining_unit_member)
-```
-
-
-## Date of Unionization 
-**When did your organization unionize?**
-```{r, message = FALSE, echo = FALSE }
-tt(df$when_unionized)
-```
 
 # Salary Crosstabs 
 
@@ -1272,7 +1316,7 @@ srg_table
 ```
 
 
-# Career Plans 
+# Career Plans {.tabset}
 ## Next Steps 
 **Which of the following most accurately describes the next step you would like to take to advance your career? Please select all that apply.**
 ```{r, message = FALSE, echo = FALSE }
@@ -1294,4 +1338,45 @@ mult_resp(df, "leaving_space", order_prop =  T)
 **Where do you want or expect to be working a year from now? Select all that apply. **
 ```{r, message = FALSE, echo = FALSE }
 mult_resp(df, "role_next_year", order_prop =  T)
+```
+
+
+# Covid 
+
+## Additional Benefits
+**Regardless of whether you were eligible, did your employer offer any additional benefits due to the COVID-19 pandemic?**
+```{r, message = FALSE, echo = FALSE }
+tt(df$covid_benefits_yesno)
+```
+
+## Benefits Offered 
+**What sort of benefits were offered/provided? Please select all that apply.**
+```{r, message = FALSE, echo = FALSE }
+mult_resp(df, "covid_benefits_specific", order_prop = T)
+```
+
+## Free Text 
+**Please briefly describe how your organization handled the COVID-19 pandemic to make things easier for staff. **
+
+TODO
+
+# Union {.tabset}
+
+## Is Unionized? 
+**Is your organization unionized or does it have one or more recognized bargaining units?**
+```{r, message = FALSE, echo = FALSE }
+tt(df$is_unionized)
+```
+
+## Union Member? 
+**Are you a member of the union/bargaining unit?**
+```{r, message = FALSE, echo = FALSE }
+tt(df$bargaining_unit_member)
+```
+
+
+## Date of Unionization 
+**When did your organization unionize?**
+```{r, message = FALSE, echo = FALSE }
+tt(df$when_unionized)
 ```
