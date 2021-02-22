@@ -8,6 +8,9 @@ knitr::opts_chunk$set(echo = TRUE)
 
 rm(list = ls())
 library(dplyr)
+library(googlesheets4)
+#library(tidyverse)
+#devtools::install_github("tidyverse/dplyr") need to get dev verison to use across
 ```
 
 # Read in Data
@@ -21,7 +24,7 @@ column names and coding free text data.
 # whoever is running this code must have access to the gsheet
 url <- 'https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M/edit'
 
-data <- googlesheets4::read_sheet(url, sheet = 'Data')
+data <- googlesheets4::read_sheet(url, sheet = '2/22: Data')
 columns <- googlesheets4::read_sheet(url, sheet = 'Columns')
 questions <- googlesheets4::read_sheet(url, sheet = 'Questions')
 freetext <- googlesheets4::read_sheet(url, sheet = 'Free Text')
@@ -85,10 +88,13 @@ names(data) <- name_helper$col_name_final[
 # until we resolve the above error, remove cols with NA as their name 
 keep_cols <- names(data)[!is.na(names(data))]
 
-df <- data %>% 
-  select(
-    all_of(keep_cols)
-  )
+# Mahelet: Commented out code isnt working for, so using an alternative 
+# df <- data %>% 
+#   select(
+#     all_of(keep_cols)
+#   )
+
+df <- data[!is.na(names(data))]
 ```
 
 Alchemer stores the response to the multi-select question as the text of
@@ -97,8 +103,12 @@ For example, in the column `negotiation_result.resp.increased_money`,
 we set `Yes, I increased my compensation` to be `TRUE`. Missing values are NA. 
 
 ```{r}
+# Mahelet: Need to remove the fields 'role_next_year' and 'country' b/c there are two fields with the same name 
+df <- df %>%  subset(., select = which(!duplicated(names(.))))
+
+
 # Among columns for multi-select responses, turn text to TRUE
-df <- df %>% mutate(
+df<- df %>% mutate(
   across(
     contains(".resp."), # apply only to multi-select columns 
     ~ifelse(!is.na(.x), TRUE, NA)
@@ -111,6 +121,6 @@ df <- df %>% mutate(
 # Write Clean Data To GoogleSheet
 
 ```{r}
-googlesheets4::write_sheet(df, url, sheet = 'data_clean')
+googlesheets4::write_sheet(df, url, sheet = 'data_clean_20200222')
 ```
 
