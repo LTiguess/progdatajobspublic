@@ -8,9 +8,6 @@ knitr::opts_chunk$set(echo = TRUE)
 
 rm(list = ls())
 library(dplyr)
-library(googlesheets4)
-#library(tidyverse)
-#devtools::install_github("tidyverse/dplyr") need to get dev verison to use across
 ```
 
 # Read in Data
@@ -24,13 +21,13 @@ column names and coding free text data.
 # whoever is running this code must have access to the gsheet
 url <- 'https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M/edit'
 
-data <- googlesheets4::read_sheet(url, sheet = '2/22: Data')
+df <- googlesheets4::read_sheet(url, sheet = '2/22: Data')
 columns <- googlesheets4::read_sheet(url, sheet = 'Columns')
 questions <- googlesheets4::read_sheet(url, sheet = 'Questions')
 freetext <- googlesheets4::read_sheet(url, sheet = 'Free Text')
 ```
 
-# Update Column Names and Values
+# Clean Column Names
 
 ## Create Helper DF of Clean Column Names
 
@@ -43,59 +40,146 @@ complete key, then use the values in that key to replace the column names
 currently on the main dataframe. 
 
 ```{r}
+# create useful column names for multi-select questions
+# format: question_name.resp.response_text
+# later on, we will use the .resp. separator to transform only these cols
 
-# join question and response helper tabs
 name_helper <- questions %>% full_join(
   columns,
   by = "question_name"
-)
-
-# create useful column names for multi-select questions
-# format: question_name.resp.response_text
-# later on, we will use the .resp. separator to transform only these
-# multi-select columns
-
-name_helper$col_name_final <- stringr::str_c(
-  snakecase::to_snake_case(name_helper$question_name_short), 
-  ".resp.", 
-  snakecase::to_snake_case(name_helper$col_name_clean)
-)
-
-# combine new names for multi-select and single-select question cols
-name_helper$col_name_final <- coalesce(
-  name_helper$col_name_final, 
-  snakecase::to_snake_case(name_helper$question_name_short)
-)
+) %>% mutate(
+  col_name_final = stringr::str_c(
+    snakecase::to_snake_case(question_name_short), 
+    ".resp.", 
+    snakecase::to_snake_case(col_name_clean)
+  )
+) %>% mutate(
+  col_name_final = coalesce(
+    col_name_final, 
+    snakecase::to_snake_case(question_name_short)
+  )
+) %>% unique()
 
 # clean up environment
 rm(columns, questions)
 ```
 
+## Remove Alchemer Added Columns 
+
+Alchemer adds a set of leading columns with geography based on IP address,
+we want to use our question instead. 
+
+```{r}
+# List alchemer added columns, coded in the google sheet as question 0
+name_helper$question_name[name_helper$question_num == 0]
+
+# we want to drop everything except the first 4 columns 
+drop_cols <- c(
+  "Contact ID", "Legacy Comments", "Comments", 
+  "Language", "Referer",  "SessionID", 
+  "User Agent", "Tags", "IP Address", "Longitude", "Latitude", 
+  "Country", "City", "State/Region", "Postal"
+)
+
+df <- df %>% 
+  select(-all_of(drop_cols))
+```
+
+## Clean Duplicated Column Names 
+
+Next, we deal with the columns that had duplicated names 
+and were renamed in the import process. Some of these are empty and need to be 
+dropped, others need to be renamed.
+
+```{r}
+# find columns that were automatically renamed in the import 
+renamed <- names(df)[grepl("....", names(df), fixed = TRUE)]
+
+# find columns where all values are NA
+empty <- df %>% 
+  select_if(~all(is.na(.))) %>% 
+  colnames()
+
+print(union(renamed, empty))
+
+# Manually pick which cols to drop 
+drop_cols <- c(
+  "None of the above:Which of the following benefits are you personally eligible for? Select all that apply....62",
+  "None of the above:Which of the following items have you personally done in the last year? Please select all that apply....88", 
+  "Option 1: Where do you want or expect to be working a year from now? Select all that apply.",
+  "Option 2: Where do you want or expect to be working a year from now? Select all that apply.",
+  "None of the above:Which of the following items have you personally done in the last year? Please select all that apply....163",
+  "Other, prefer to specify:What is your race / ethnicity? Please select all that apply....176", 
+  "Prefer not to answer:What is your race / ethnicity? Please select all that apply....178",
+  "Other, prefer to specify  test:What is your race / ethnicity? Please select all that apply....179",
+  "Other, prefer to specify  test:What is your race / ethnicity? Please select all that apply....182"
+)
+
+df <- df %>% 
+  select(-all_of(drop_cols))
+```
+
+```{r}
+# find remaining columns that were automatically renamed in the import 
+renamed <- names(df)[grepl("....", names(df), fixed = TRUE)]
+
+revert_names <- function(x){
+  
+  # check whether name needs to be fixed 
+  if(grepl("....", x, fixed = TRUE)){
+    
+    # remove the periods and number that read_sheet inserted
+    vec <- stringr::str_remove(x, "\\.{4}\\d{2,}$") 
+    
+    # add back the period that was in the original column name
+    vec <- paste0(vec, ".") 
+    
+  } else {
+    vec <- x
+  }
+  
+  return(vec)
+}
+
+
+# remove "....[number]" at the end of the column name
+colnames(df) <- purrr::map_chr(
+  colnames(df), revert_names
+)
+```
+
+## Recode Column Names with Values from Helper Table
+
 Next, we use the newly created column names as key-value pairs, and substitute
 the current column names for their more helpful versions. 
 
 ```{r}
+# TODO: Updated: Deal with the technical and non technical versions 
+# of the column "None of the above:Which of the following items have you personally done in the last year? Please select all that apply."      
+# manually rename by position 
+stopifnot(
+  colnames(df)[144] == 
+    "None of the above:Which of the following items have you personally done in the last year? Please select all that apply."
+)
+stopifnot(
+  colnames(df)[158] == 
+    "Other, prefer to specify:What is your race / ethnicity? Please select all that apply."
+)
 
-# TODO: Fix join such that we capture all columns 
-  # R imported any duplicated column names with an extra # identifier on the end
-  # so those columns did not match in the join, and ended up with null colnames
+df <- df %>%
+  rename(
+    "projects_done_technical.resp.none" = 144, 
+    "race.resp.other_specify_freetext" = 158
+  )
 
 # replace original names with updated versions, matching on old names
-names(data) <- name_helper$col_name_final[
-  match(names(data), name_helper$col_name_original)
-] 
-
-# until we resolve the above error, remove cols with NA as their name 
-keep_cols <- names(data)[!is.na(names(data))]
-
-# Mahelet: Commented out code isnt working for, so using an alternative 
-# df <- data %>% 
-#   select(
-#     all_of(keep_cols)
-#   )
-
-df <- data[!is.na(names(data))]
+colnames(df) <- coalesce( 
+  name_helper$col_name_final[
+    match(names(df), name_helper$col_name_original)], 
+  colnames(df))
 ```
+
+# Recode Column Values
 
 Alchemer stores the response to the multi-select question as the text of
 the response, but we want to transform these to a boolean for easy counting. 
@@ -103,24 +187,45 @@ For example, in the column `negotiation_result.resp.increased_money`,
 we set `Yes, I increased my compensation` to be `TRUE`. Missing values are NA. 
 
 ```{r}
-# Mahelet: Need to remove the fields 'role_next_year' and 'country' b/c there are two fields with the same name 
-df <- df %>%  subset(., select = which(!duplicated(names(.))))
-
-
 # Among columns for multi-select responses, turn text to TRUE
-df<- df %>% mutate(
-  across(
-    contains(".resp."), # apply only to multi-select columns 
+multi_cols <- colnames(df)[grepl(".resp.", colnames(df), fixed = TRUE)]
+
+df <- df %>% 
+  mutate_at(
+    all_of(multi_cols), 
     ~ifelse(!is.na(.x), TRUE, NA)
   )
-)
 ```
 
-# Create Dummy Variables 
 
-# Write Clean Data To GoogleSheet
+####### Unfinished Code Below ###### 
+
+# Create Bins and Dummy Variables 
+
+* Job Categories (General data, etc)
+* Gender
+* Sexuality 
+* ZipCode to Census areas 
+* Salary 
+
+* multiply %s so they are 0-100 not 0-1
+
+# Data Validation and Attention Checks 
+
+* Years of experience questions -- is the sum > 30, are all the answers the same number >> write to NA
+* Outliers in Salary, 0 >> change to NA
+* Among professional development Qs, did people only say that they had done PD activities that they had access to in q1? 
+
+## Missingness
+
+Create variable for the last question that someone answered to see dropoff/ flows
+
+# Write Clean Data To GoogleSheet 
+
+this is causing errors rn because of empty cells
 
 ```{r}
-googlesheets4::write_sheet(df, url, sheet = 'data_clean_20200222')
+googlesheets4::write_sheet(
+  df, url, sheet = 'data_clean_20210306')
 ```
 
