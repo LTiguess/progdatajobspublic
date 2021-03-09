@@ -8,6 +8,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 rm(list = ls())
 library(dplyr)
+library(janitor)
 ```
 
 # Read in Data
@@ -188,7 +189,13 @@ we set `Yes, I increased my compensation` to be `TRUE`. Missing values are NA.
 
 ```{r}
 # Among columns for multi-select responses, turn text to TRUE
-multi_cols <- colnames(df)[grepl(".resp.", colnames(df), fixed = TRUE)]
+# but ignore freetext columns labeld as "other_specify"
+
+
+multi_cols <- colnames(df)[
+  grepl(".resp.", colnames(df), fixed = TRUE) &
+    ! grepl("other_specify", colnames(df), fixed = TRUE)
+]
 
 df <- df %>% 
   mutate_at(
@@ -196,6 +203,176 @@ df <- df %>%
     ~ifelse(!is.na(.x), TRUE, NA)
   )
 ```
+
+# Bin Variables 
+
+## Eligible for Survey
+
+```{r}
+df <- df %>% mutate(
+  eligible = 
+    # must have answered all the questions in the work in politics section
+    # if any are NA, then the response is ineligible 
+    ! is.na(work_in_politics) &
+    ! is.na(data_40_org) &
+    ! is.na(data_40_team) &
+    ! is.na(data_40_role) &
+    # must have said they worked in politics 
+    work_in_politics %in% c("Yes", "Did but employment ended post-election") &
+    # either org, team, or role must be data focused
+    any(
+      data_40_org != 'No', 
+      data_40_team != 'No' ,
+      data_40_role != 'No'
+    )
+  )
+    
+# Gut Check Logic 
+
+# most people who completed the survey are eligible
+df %>% tabyl(status, eligible)
+
+# most people got kicked out for not answering the questions
+df %>% filter(eligible == FALSE) %>% 
+  tabyl(data_40_org, data_40_team, data_40_role)
+
+# 85 people got kicked out for saying they didn't work in politics 
+df %>% filter(eligible == FALSE) %>% 
+  tabyl(work_in_politics)
+
+# potentially some misunderstanding of the question, but not much
+df %>% filter(work_in_politics == "No") %>% 
+  tabyl(org_type)
+```
+
+## Gender
+
+```{r}
+df <- df %>% mutate(
+  gender_bin = case_when(
+    gender == "Cis man" ~ "Cis man", 
+    gender == "Prefer not to answer" ~ "Prefer not to answer",
+    gender != "Prefer not to answer" |
+      gender != "Cis man" ~ 'Non-Cis man'), 
+  gender_cis = case_when(
+    gender %in% c("Cis man", "Cis Woman") ~ "Cisgender", 
+    gender %in% c(
+      "Different gender identity, prefer to specify", 
+      "Gender non-binary or non-conforming", 
+      "Trans man", "Trans woman") ~ "Trans or NonBinary", 
+    gender == "Prefer not to answer" ~ "Prefer not to answer"
+  )
+)
+```
+
+## Sexuality 
+
+```{r}
+df <- df %>% mutate(
+  sexual_orientation_bin = case_when(
+    sexual_orientation == "Heterosexual/straight" ~ "Heterosexual", 
+    sexual_orientation == "Prefer not to answer" ~ "Prefer not to answer", 
+    TRUE ~ "Queer"
+  )
+)
+```
+
+## Age
+
+```{r}
+breaks <- c(20, 24, 29, 34, 39, 44, 49, 54, 59, Inf)
+labels <- c('20-24', '25-29', '30-34',
+            '35-39', '40-44','45-49',
+            '50-54', '55-59', '60+')
+df$age <- 2020 - as.numeric(df$yob)
+df$age_bin <- cut(df$age, breaks = breaks, labels = labels) 
+```
+
+## Race
+
+```{r}
+race_cols <- df %>% 
+  select(starts_with("race.resp"), 
+         - race.resp.other_specify, 
+         - race.resp.other_specify_freetext) %>%
+  colnames()
+
+df <- df %>%
+  rowwise() %>%
+  # for each respondent, count the number of races selected
+  mutate(n_resp_selected = sum(c_across(race_cols), na.rm = TRUE)) 
+
+df <- df %>% mutate(
+  # if someone has selected multiple races, code as multi-racial
+  # if someone selected no races, code as missing/other/prefer not to say
+  # otherwise, code as the 1 race selected 
+  race_bin = case_when(
+    race.resp.white == TRUE &
+      n_resp_selected == 1 ~ 'White',
+    race.resp.black == TRUE &
+      n_resp_selected  == 1 ~ 'Black',
+    race.resp.native_american == TRUE &
+      n_resp_selected  == 1 ~ 'Native American',
+    race.resp.asian == TRUE &
+      n_resp_selected  == 1 ~ 'Asian or Asian American (including South Asian)',
+    race.resp.native_pacific == TRUE  & 
+      n_resp_selected  == 1 ~ 'Native Hawaiian or Pacific Islander',
+    race.resp.latinx == TRUE & 
+      n_resp_selected  == 1 ~ 'Hispanic or Latinx', 
+    race.resp.middle_eastern == TRUE  & 
+      n_resp_selected  == 1 ~ 'Middle Eastern',
+    n_resp_selected  > 1 ~ 'Multi-Racial', 
+    n_resp_selected  == 0 ~ 'Other/Prefer Not to Say/Missing'
+  ), 
+  race_bin2 = case_when(
+    race_bin != 'White' &
+      race_bin !=  'Other/Prefer Not to Say/Missing' ~ 'POC'
+    )
+  ) 
+```
+
+## Salary 
+
+```{r}
+## Salary 
+
+breaks <- c(
+  0, 20000, 24999,  29999, 34999, 39999, 44999, 49999, 54999, 
+  59999, 64999, 69999, 74999, 79999, 84999, 89999, 94999, 99999,
+  104999, 109999, 114999, 119999, 124999, 129999, 134999, 139999, 
+  144999, 149999, 154999, 159999, 164999, 169999, 174999,
+  179999, 184999, 189999, 194999, 199999, Inf
+)
+
+labels <- c(
+  "Under $20,000", "$20,000 to $24,999", 	"$25,000 to $29,999", 	
+  "$30,000 to $34,999", "$35,000 to $39,999", "$40,000 to $44,999", 	
+  "$45,000 to $49,999", "$50,000 to $54,999", "$55,000 to $59,999", 	
+  "$60,000 to $64,999", "$65,000 to $69,999", "$70,000 to $74,999",	
+  "$75,000 to $79,999", "$80,000 to $84,999",	"$85,000 to $89,999",	
+  "$90,000 to $94,999",	"$95,000 to $99,999", "$100,000 to $104,999",	
+  "$105,000 to $109,999",	"$110,000 to $114,999",	"$115,000 to $119,999",	
+  "$120,000 to $124,999",	"$125,000 to $129,999",	"$130,000 to $134,999",
+  "$135,000 to $139,999",	"$140,000 to $144,999",	"$145,000 to $149,999",	
+  "$150,000 to $154,999",	"$155,000 to $159,999",	"$160,000 to $164,999",	
+  "$165,000 to $169,999",	"$170,000 to $174,999",	"$175,000 to $179,999",	
+  "$180,000 to $184,999",	"$185,000 to $189,999","$190,000 to $194,999",
+  "$195,000 to $199,999", "$200,000+"
+)
+
+df$compensation <- as.numeric(df$compensation)
+df$compensation_bin <- cut(df$compensation, breaks = breaks, labels = labels) 
+df$compensation_bin_numeric <- as.numeric(df$compensation_bin) # help with finding the median 
+
+# compensation_bin to compensation_bin_numeric crosswalk 
+compensation_bin_crosswalk <- unique(
+  df[c("compensation_bin", "compensation_bin_numeric")]
+)
+```
+
+## Zip Code to Census Area
+
+
 
 
 ####### Unfinished Code Below ###### 
@@ -226,6 +403,6 @@ this is causing errors rn because of empty cells
 
 ```{r}
 googlesheets4::write_sheet(
-  df, url, sheet = 'data_clean_20210306')
+  df, url, sheet = 'data_clean_20210308')
 ```
 
