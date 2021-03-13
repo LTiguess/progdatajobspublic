@@ -7,8 +7,12 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 
 rm(list = ls())
+
 library(dplyr)
 library(janitor)
+
+# print working dir for reference 
+here::here()
 ```
 
 # Read in Data
@@ -26,6 +30,23 @@ df <- googlesheets4::read_sheet(url, sheet = '2/22: Data')
 columns <- googlesheets4::read_sheet(url, sheet = 'Columns')
 questions <- googlesheets4::read_sheet(url, sheet = 'Questions')
 freetext <- googlesheets4::read_sheet(url, sheet = 'Free Text')
+
+# reference data
+# real purchasing power by metro statistical area (MSA), downloaded from 
+# https://apps.bea.gov/iTable/iTable.cfm?reqid=70&step=30&isuri=1&major_area=5&area=xx&year=2019&tableid=104&category=8101&area_type=0&year_end=-1&classification=non-industry&state=5&statistic=1&yearbegin=-1&unit_of_measure=levels
+
+rpp <- readr::read_csv(
+  # first 4 lines are notes, not data, so skip
+  here::here("data", "rpp_by_msa_2019.csv"), skip = 4) %>% 
+  clean_names() %>%
+  rename(rpp = x2019) %>%
+  # last 3 lines are notes that caused the parsing failure, so drop
+  filter(!is.na(rpp))
+
+  
+
+
+
 ```
 
 # Clean Column Names
