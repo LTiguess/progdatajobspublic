@@ -371,7 +371,7 @@ summary {
 <p>We manually pulled a csv out of Alchemer and stored that data in a Google Sheet, along with some manually created helper tabs for translating column names and coding free text data.</p>
 <pre class="r"><code># currently using interactive/ in browser auth 
 # whoever is running this code must have access to the gsheet
-url &lt;- &#39;https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M/edit&#39;
+url &lt;- &#39;https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M&#39;
 
 df &lt;- googlesheets4::read_sheet(url, sheet = &#39;2/22: Data&#39;)</code></pre>
 <pre><code>## Using an auto-discovered, cached token.
@@ -399,6 +399,45 @@ df &lt;- googlesheets4::read_sheet(url, sheet = &#39;2/22: Data&#39;)</code></pr
 <pre><code>## Range &quot;&#39;Free Text&#39;&quot;</code></pre>
 <pre><code>## New names:
 ## * `` -&gt; ...5</code></pre>
+<pre class="r"><code># reference data
+# real purchasing power by metro statistical area (MSA), downloaded from 
+# https://apps.bea.gov/iTable/iTable.cfm?reqid=70&amp;step=30&amp;isuri=1&amp;major_area=5&amp;area=xx&amp;year=2019&amp;tableid=104&amp;category=8101&amp;area_type=0&amp;year_end=-1&amp;classification=non-industry&amp;state=5&amp;statistic=1&amp;yearbegin=-1&amp;unit_of_measure=levels
+
+rpp &lt;- readr::read_csv(
+  # first 4 lines are notes, not data, so skip
+  here::here(&quot;data&quot;, &quot;rpp_by_msa_2019.csv&quot;), skip = 4) %&gt;% 
+  clean_names() %&gt;%
+  rename(
+    cbsa = geo_fips, 
+    rpp = x2019
+  ) %&gt;%
+  # last 3 lines are notes that caused the parsing failure, so drop
+  filter(!is.na(rpp))</code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   GeoFips = col_character(),
+##   GeoName = col_character(),
+##   `2019` = col_double()
+## )</code></pre>
+<pre><code>## Warning: 4 parsing failures.
+## row col  expected    actual                                                                                              file
+## 387  -- 3 columns 1 columns &#39;/Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/rpp_by_msa_2019.csv&#39;
+## 388  -- 3 columns 1 columns &#39;/Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/rpp_by_msa_2019.csv&#39;
+## 389  -- 3 columns 1 columns &#39;/Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/rpp_by_msa_2019.csv&#39;
+## 390  -- 3 columns 1 columns &#39;/Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/rpp_by_msa_2019.csv&#39;</code></pre>
+<pre class="r"><code># geographic info for zip to CBSA downloaded from  
+# https://www.huduser.gov/portal/datasets/usps_crosswalk.html#data 
+geo &lt;- readr::read_csv(here::here(&quot;data&quot;, &quot;zip_to_cbsa.csv&quot;))  %&gt;% 
+  clean_names() </code></pre>
+<pre><code>## Parsed with column specification:
+## cols(
+##   ZIP = col_character(),
+##   CBSA = col_double(),
+##   RES_RATIO = col_double(),
+##   BUS_RATIO = col_double(),
+##   OTH_RATIO = col_double(),
+##   TOT_RATIO = col_double()
+## )</code></pre>
 </div>
 <div id="clean-column-names" class="section level1">
 <h1>Clean Column Names</h1>
@@ -424,7 +463,7 @@ name_helper &lt;- questions %&gt;% full_join(
     col_name_final, 
     snakecase::to_snake_case(question_name_short)
   )
-) %&gt;% unique()
+) %&gt;% unique() 
 
 # clean up environment
 rm(columns, questions)</code></pre>
@@ -768,21 +807,40 @@ compensation_bin_crosswalk &lt;- unique(
 </div>
 <div id="zip-code-to-census-area" class="section level2">
 <h2>Zip Code to Census Area</h2>
+<pre class="r"><code># shorten geo_name by removing the (MSA) label in each row
+# some rows end w a delimiter like &quot;1/&quot;, remove those too 
+rpp &lt;- rpp %&gt;% 
+  mutate(
+    geo_name = stringr::str_remove(
+      geo_name, &quot;(\\(Metropolitan Statistical Area\\))|\\s.{2}$&quot;)
+  )
+
+rpp &lt;- geo %&gt;% 
+  mutate(cbsa = as.character(cbsa)) %&gt;%
+  left_join(rpp, by = c(&quot;cbsa&quot; = &quot;cbsa&quot;)) %&gt;% 
+  select(zip, cbsa, geo_name, rpp)
+
+rm(geo)</code></pre>
+<pre class="r"><code># zip came in as a list, need to flatten it to a vector
+# see purrr documentation here 
+# https://purrr.tidyverse.org/reference/flatten.html#arguments
+
+# some items are a string NULL instead of NA, fix that so that flatten() works
+df$zipcode[df$zipcode == &quot;NULL&quot;] &lt;- NA
+
+# flatten, then adjust formatting
+df$zipcode &lt;- purrr::flatten_chr(df$zipcode)
+df$zipcode &lt;- stringr::str_pad(
+  as.double(df$zipcode), 5, &quot;left&quot;, &quot;0&quot;
+)</code></pre>
+<pre><code>## Warning in stri_pad_left(string, width, pad = pad): NAs introduced by coercion</code></pre>
+<pre class="r"><code># join newly cleaned zip codes to real purchasing power dataset
+df &lt;- df %&gt;%
+  left_join(rpp, by = c(&quot;zipcode&quot; = &quot;zip&quot;))</code></pre>
 <div id="unfinished-code-below" class="section level7">
 <p class="heading">Unfinished Code Below</p>
 </div>
 </div>
-</div>
-<div id="create-bins-and-dummy-variables" class="section level1">
-<h1>Create Bins and Dummy Variables</h1>
-<ul>
-<li><p>Job Categories (General data, etc)</p></li>
-<li><p>Gender</p></li>
-<li><p>Sexuality</p></li>
-<li><p>ZipCode to Census areas</p></li>
-<li><p>Salary</p></li>
-<li><p>multiply %s so they are 0-100 not 0-1</p></li>
-</ul>
 </div>
 <div id="data-validation-and-attention-checks" class="section level1">
 <h1>Data Validation and Attention Checks</h1>
@@ -796,13 +854,57 @@ compensation_bin_crosswalk &lt;- unique(
 <p>Create variable for the last question that someone answered to see dropoff/ flows</p>
 </div>
 </div>
-<div id="write-clean-data-to-googlesheet" class="section level1">
-<h1>Write Clean Data To GoogleSheet</h1>
-<p>this is causing errors rn because of empty cells</p>
-<pre class="r"><code>googlesheets4::write_sheet(
-  df, url, sheet = &#39;data_clean_20210308&#39;)</code></pre>
-<pre><code>## Writing to &quot;2/7 Survey Responses &quot;</code></pre>
-<pre><code>## Writing to sheet &quot;data_clean_20210308&quot;</code></pre>
+<div id="write-clean-data-to-googledrive" class="section level1">
+<h1>Write Clean Data To GoogleDrive</h1>
+<p>First, write the dataframes to a local directory via the <code>here</code> package. Make sure your .gitignore is set to ignore the main results df, since it includes PII, but the other data files can be sent to git.</p>
+<p>Since we can’t send the results to git, we’ll upload to google drive instead.</p>
+<pre class="r"><code>readr::write_csv(
+  df, 
+  here::here(&quot;data&quot;, &quot;survey_responses.csv&quot;)
+)
+
+readr::write_csv(
+  compensation_bin_crosswalk, 
+  here::here(&quot;data&quot;, &quot;compensation_bin_crosswalk.csv&quot;)
+)
+
+readr::write_csv(
+  rpp, 
+  here::here(&quot;data&quot;, &quot;rpp_zip_clean.csv&quot;)
+)
+
+# write a cleaned up version of the name helper table 
+name_helper &lt;- name_helper %&gt;%
+  rename(
+   response_name = sub_response, 
+   response_name_short = col_name_clean
+  ) %&gt;% select(-col_name_helper)
+
+readr::write_csv(
+  name_helper, 
+  here::here(&quot;data&quot;, &quot;col_name_helper.csv&quot;)
+)</code></pre>
+<pre class="r"><code># upload results file to google drive, since we can&#39;t put it in git
+# and the google sheets upload was causing issues/ misaligned columns
+
+folder &lt;- &#39;https://drive.google.com/drive/folders/1iWT_PmE6Fo6jqVFVc3c6d-12j7PmE7T5/&#39; 
+
+googledrive::drive_upload(
+  here::here(&quot;data&quot;, &quot;survey_responses.csv&quot;),
+  path = googledrive::as_dribble(folder), 
+  name = &quot;survey_responses_clean.csv&quot;
+)</code></pre>
+<pre><code>## Using an auto-discovered, cached token.
+## To suppress this message, modify your code or options to clearly consent to the use of a cached token.
+## See gargle&#39;s &quot;Non-interactive auth&quot; vignette for more details:
+## https://gargle.r-lib.org/articles/non-interactive-auth.html</code></pre>
+<pre><code>## The googledrive package is using a cached token for olivia.mae.robinson@gmail.com.</code></pre>
+<pre><code>## Local file:
+##   * /Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/survey_responses.csv
+## uploaded into Drive file:
+##   * survey_responses_clean.csv: 1CCqYzWr81U5V55OiFatcvsvIyjnNTH_U
+## with MIME type:
+##   * text/csv</code></pre>
 </div>
 
 
