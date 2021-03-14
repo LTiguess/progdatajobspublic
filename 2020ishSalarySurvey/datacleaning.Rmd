@@ -24,7 +24,7 @@ column names and coding free text data.
 ```{r}
 # currently using interactive/ in browser auth 
 # whoever is running this code must have access to the gsheet
-url <- 'https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M/edit'
+url <- 'https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M'
 
 df <- googlesheets4::read_sheet(url, sheet = '2/22: Data')
 columns <- googlesheets4::read_sheet(url, sheet = 'Columns')
@@ -39,14 +39,17 @@ rpp <- readr::read_csv(
   # first 4 lines are notes, not data, so skip
   here::here("data", "rpp_by_msa_2019.csv"), skip = 4) %>% 
   clean_names() %>%
-  rename(rpp = x2019) %>%
+  rename(
+    cbsa = geo_fips, 
+    rpp = x2019
+  ) %>%
   # last 3 lines are notes that caused the parsing failure, so drop
   filter(!is.na(rpp))
 
-  
-
-
-
+# geographic info for zip to CBSA downloaded from  
+# https://www.huduser.gov/portal/datasets/usps_crosswalk.html#data 
+geo <- readr::read_csv(here::here("data", "zip_to_cbsa.csv"))  %>% 
+  clean_names() 
 ```
 
 # Clean Column Names
@@ -80,7 +83,7 @@ name_helper <- questions %>% full_join(
     col_name_final, 
     snakecase::to_snake_case(question_name_short)
   )
-) %>% unique()
+) %>% unique() 
 
 # clean up environment
 rm(columns, questions)
@@ -393,20 +396,47 @@ compensation_bin_crosswalk <- unique(
 
 ## Zip Code to Census Area
 
+```{r}
 
+# shorten geo_name by removing the (MSA) label in each row
+# some rows end w a delimiter like "1/", remove those too 
+rpp <- rpp %>% 
+  mutate(
+    geo_name = stringr::str_remove(
+      geo_name, "(\\(Metropolitan Statistical Area\\))|\\s.{2}$")
+  )
+
+rpp <- geo %>% 
+  mutate(cbsa = as.character(cbsa)) %>%
+  left_join(rpp, by = c("cbsa" = "cbsa")) %>% 
+  select(zip, cbsa, geo_name, rpp)
+
+rm(geo)
+```
+
+```{r}
+# zip came in as a list, need to flatten it to a vector
+# see purrr documentation here 
+# https://purrr.tidyverse.org/reference/flatten.html#arguments
+
+# some items are a string NULL instead of NA, fix that so that flatten() works
+df$zipcode[df$zipcode == "NULL"] <- NA
+
+# flatten, then adjust formatting
+df$zipcode <- purrr::flatten_chr(df$zipcode)
+df$zipcode <- stringr::str_pad(
+  as.double(df$zipcode), 5, "left", "0"
+)
+```
+
+```{r}
+# join newly cleaned zip codes to real purchasing power dataset
+df <- df %>%
+  left_join(rpp, by = c("zipcode" = "zip"))
+```
 
 
 ####### Unfinished Code Below ###### 
-
-# Create Bins and Dummy Variables 
-
-* Job Categories (General data, etc)
-* Gender
-* Sexuality 
-* ZipCode to Census areas 
-* Salary 
-
-* multiply %s so they are 0-100 not 0-1
 
 # Data Validation and Attention Checks 
 
@@ -418,12 +448,53 @@ compensation_bin_crosswalk <- unique(
 
 Create variable for the last question that someone answered to see dropoff/ flows
 
-# Write Clean Data To GoogleSheet 
+# Write Clean Data To GoogleDrive
 
-this is causing errors rn because of empty cells
+First, write the dataframes to a local directory via the `here` package. 
+Make sure your .gitignore is set to ignore the main results df, since it 
+includes PII, but the other data files can be sent to git. 
+
+Since we can't send the results to git, we'll upload to google drive instead. 
 
 ```{r}
-googlesheets4::write_sheet(
-  df, url, sheet = 'data_clean_20210308')
+readr::write_csv(
+  df, 
+  here::here("data", "survey_responses.csv")
+)
+
+readr::write_csv(
+  compensation_bin_crosswalk, 
+  here::here("data", "compensation_bin_crosswalk.csv")
+)
+
+readr::write_csv(
+  rpp, 
+  here::here("data", "rpp_zip_clean.csv")
+)
+
+# write a cleaned up version of the name helper table 
+name_helper <- name_helper %>%
+  rename(
+   response_name = sub_response, 
+   response_name_short = col_name_clean
+  ) %>% select(-col_name_helper)
+
+readr::write_csv(
+  name_helper, 
+  here::here("data", "col_name_helper.csv")
+)
+```
+
+```{r}
+# upload results file to google drive, since we can't put it in git
+# and the google sheets upload was causing issues/ misaligned columns
+
+folder <- 'https://drive.google.com/drive/folders/1iWT_PmE6Fo6jqVFVc3c6d-12j7PmE7T5/' 
+
+googledrive::drive_upload(
+  here::here("data", "survey_responses.csv"),
+  path = googledrive::as_dribble(folder), 
+  name = "survey_responses_clean.csv"
+)
 ```
 
