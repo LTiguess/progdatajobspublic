@@ -71,19 +71,5 @@ mult_resp <- function(df, question.prefix, raw_df = F,
         align = c('l', 'r', 'r')
       )
   }
-
-  
-  # # Returns the HTML stuff
-  # .pretty_tt <- function(freq){
-  #   
-  #   freq %>%
-  #     rename(' ' = response,
-  #            'Proportion' = unweighted_prop) %>%
-  #     formattable::formattable(list(
-  #       Proportion = formattable::proportion_bar()),
-  #       align = c('l', 'r')
-  #     )
-  # }
-  
 }
 

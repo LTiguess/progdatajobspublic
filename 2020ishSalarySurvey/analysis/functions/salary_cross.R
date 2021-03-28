@@ -22,7 +22,7 @@ salary_cross <- function(x, variable, salary,
 df <- data.frame(x) %>%
   select({{variable}}, {{salary}}, {{salary_bin}}) %>% 
   # remove anyone that is missing the categorical variable and/or salary data 
-  filter(!is.na({{variable}}), !is.na({{salary}})) %>% 
+  filter(!is.na({{variable}}), !is.na({{salary}}), !is.na({{salary_bin}})) %>% 
   mutate(salary_bin_numeric = as.numeric({{salary_bin}}))
 
 # crosswalk to go from numeric salary bin to salary bin 
@@ -42,47 +42,61 @@ cross_table <- df  %>%
   left_join(
     salary_bin_crosswalk,
     by = c("median_numeric" = "salary_bin_numeric")
-  ) %>%
-  mutate(mean = formattable::currency(mean)) 
+  )
 
 
 # Order by output by mean, prespecified order, by alphabetic order 
 if(order_by == "mean"){
   # order by mean
-  cross_table <- cross_table %>%
+  cross_table <- cross_table %>% 
+    rename(variable = {{variable}}) %>% 
     arrange(desc(mean))
-
-# } else if (order_by == "levels") {
-#    # order by prespecified levels
-#   cross_table <- cross_table %>%
-#     mutate(
-#TODO: fix error message ~~~~~
-#       variable = factor({{variable}},
-#              levels = c(lvls[!lvls %in% last_ord], last_ord))
-#       ) %>%
-#     arrange({{variable}})
+} else if (order_by == "levels") {
+   # order by prespecified levels
+  cross_table <- cross_table %>%
+    mutate(
+      variable = factor({{variable}},
+             levels = c(lvls[!lvls %in% last_ord], last_ord))
+      ) %>%
+    arrange(variable)
 } else if (order_by == "alpha") {
     cross_table <- cross_table %>%
-      arrange({{variable}}) # asc order
+      rename(variable = {{variable}}) %>%
+      arrange(variable) # asc order
   } else {
-    stop("argument 'order_by' value must either be mean, levels, or alpha")
+    stop("argument 'order_by' value must either be 'mean', 'levels', or 'alpha'")
   }
 
 
 # clean-up output 
 clean_table <- cross_table %>%
   # select only the necessary columns
-  select({{variable}}, n, mean, median = {{salary_bin}}) %>%
+  select(variable, n, mean, median = {{salary_bin}}) %>%  
+  mutate(mean = formattable::currency(mean, digits = 0))  %>%  
+  # mutate(mean = ifelse(n >= 5, formattable::currency(mean), NA),
+  #        median = ifelse(n >= 5, median, NA)) %>%
+  
   # clean-up output
-  rename('Category' = {{variable}},
+  rename('Category' = variable,
          'N' = n,
          'Mean' = mean,
-         'Median' = median)  %>%
+         'Median' = median) %>%
   formattable::formattable(
     list(N = formattable::proportion_bar()),
-    align = c('l', 'r', 'r', 'r'))
+    align = c('l', 'r', 'r', 'r'))  %>% 
+  kbl() %>%
+  kable_minimal()
 
 return(clean_table)
 
 }
 
+
+
+
+# test <- formatter("span",
+#                   style = x ~ ifelse(cyl < 5, "formattable::currency(cyl)", "-"))
+# 
+# yesno <- function(x) ifelse(x, "yes", "no")
+# formattable(mtcars, list(cyl = test, qsec = top10red, am = yesno))
+# 
