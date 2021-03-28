@@ -35,7 +35,8 @@ mult_resp <- function(df, question.prefix, raw_df = F,
     gather("response", "answer_q") %>%
     group_by(response) %>%
     summarize(
-      unweighted_prop  = sum(answer_q, na.rm = T)/ n_res)
+      unweighted_prop  = sum(answer_q, na.rm = T)/ n_res,
+      unweighted_n = sum(answer_q, na.rm = T))
   
   
   
@@ -52,9 +53,9 @@ mult_resp <- function(df, question.prefix, raw_df = F,
   }
   
   freq <- freq %>%
-    select(response, unweighted_prop) %>%
-    mutate(unweighted_prop = formattable::percent(unweighted_prop, 0)
-           #   unweighted_n = formattable::digits(unweighted_n, 0)
+    select(response, unweighted_prop, unweighted_n) %>%
+    mutate(unweighted_prop = formattable::percent(unweighted_prop, 0), 
+           unweighted_n = formattable::digits(unweighted_n, 0)
     )
   
   
@@ -63,25 +64,12 @@ mult_resp <- function(df, question.prefix, raw_df = F,
   } else {
     freq %>%
       rename(' ' = response,
-             'Proportion' = unweighted_prop) %>%
+             'Proportion' = unweighted_prop, 
+             'N' = unweighted_n) %>%
       formattable::formattable(list(
         Proportion = formattable::proportion_bar()),
-        align = c('l', 'r')
+        align = c('l', 'r', 'r')
       )
   }
-
-  
-  # # Returns the HTML stuff
-  # .pretty_tt <- function(freq){
-  #   
-  #   freq %>%
-  #     rename(' ' = response,
-  #            'Proportion' = unweighted_prop) %>%
-  #     formattable::formattable(list(
-  #       Proportion = formattable::proportion_bar()),
-  #       align = c('l', 'r')
-  #     )
-  # }
-  
 }
 
