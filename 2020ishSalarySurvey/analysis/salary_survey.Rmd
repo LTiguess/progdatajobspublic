@@ -21,18 +21,18 @@ output:
 
 Functions: 
 
-* Create salary crosstab function (give option to order values, for entries less than 5 remove from graph)
+* Create salary crosstab function (for entries less than 5 remove from graph)
 * tt function: Remove lines between variables. Add argument to remove NAs
-* histogram function: add mean line 
 * For multiple response question function, make the output prettier + have the option to order values by a prespecified ordering 
 * Create negotiation x demographic crosstab function 
 * Create a management x demographic crosstab function 
 
 helpful links 
-https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html#Integration_with_formattable 
-https://haozhu233.github.io/kableExtra/use_kableExtra_with_formattable.html 
-https://stackoverflow.com/questions/64065003/how-do-double-curly-brackets-work-in-dplyr
-https://www.r-bloggers.com/2019/11/tidyverse-evolutions-curly-curly-operator-and-pivoting-feat-tidytuesday-data-leaflet-visuals/
+
+* https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html#Integration_with_formattable 
+* https://haozhu233.github.io/kableExtra/use_kableExtra_with_formattable.html 
+* https://stackoverflow.com/questions/64065003/how-do-double-curly-brackets-work-in-dplyr
+* https://www.r-bloggers.com/2019/11/tidyverse-evolutions-curly-curly-operator-and-pivoting-feat-tidytuesday-data-leaflet-visuals/
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -52,6 +52,10 @@ library(googlesheets4)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
+library(viridis)
+library(forcats)
+library(ggridges)
+library(kableExtra)
 ```
 
 
@@ -236,7 +240,10 @@ tt(df$gender, order_prop = T)
 
 ToDo: Break out 'Other/Prefer Not to Say/Missing' into separate categories 
 ```{r, message = FALSE, echo = FALSE }
-tt(df$race_bin, order_prop = T)
+tt(df$race_bin, 
+   order_prop = T, 
+   last_ord = "Missing"
+   )
 ```
 
 
@@ -249,14 +256,26 @@ tt(df$race_bin2, order_prop = T)
 **How long have you or your family lived in the United States?**
 
 ```{r, message = FALSE, echo = FALSE }
-tt(df$immigration, order_prop = T)
+tt(df$immigration, 
+   order_prop = F, 
+   lvls = c("I’m the first generation in the United States", 
+            "One or more of my parents immigrated to the United States", 
+            "One or more of my grandparents immigrated to the United States",
+            "My family has been in the United States for 3 generations or more", 
+            "None of the above",
+            "Prefer not to answer"),
+   last_ord = "Missing"
+   )
 ```
 
 ### Age 
 **2020 - What is your year (YYYY) of birth?**
 ```{r, message = FALSE, echo = FALSE }
-median_hist(df$age, x_label = "Age", 
-            med_label = "The median age is")
+median_hist(df$age, 
+            x_label = "Age", 
+            med_label = "The median age is", 
+            med_label_x_cord = median(df$age, na.rm = TRUE) + 7,
+            med_label_y_cord = 50)
 ```
 
 
@@ -269,7 +288,10 @@ tt(df$age_bin, order_prop = F)
 ### Sexuality 
 **Do you consider yourself to be ...?**
 ```{r, message = FALSE, echo = FALSE }
-tt(df$sexual_orientation, order_prop = T)
+tt(df$sexual_orientation,
+   order_prop = T, 
+   last_ord = c("Prefer not to answer", "Missing")
+   )
 ```
 
 
@@ -278,7 +300,10 @@ tt(df$sexual_orientation, order_prop = T)
 **Do you identify as a disabled? You are considered to have a disability if you have a physical or mental impairment or medical condition that substantially limits a major life activity, or if you have a history or record of such an impairment or medical condition.**
 
 ```{r, message = FALSE, echo = FALSE }
-tt(df$disabled, order_prop = T)
+tt(df$disabled,
+   order_prop = F, 
+   lvls = c("Yes, I have or previously had a disability", "No, I don't have a disability", "Other"),
+   last_ord = c("Prefer not to answer", "Missing"))
 ```
 
 
@@ -286,14 +311,27 @@ tt(df$disabled, order_prop = T)
 ### Military Status 
 **Are you a member of the military or a veteran?** 
 ```{r, message = FALSE, echo = FALSE }
-tt(df$military_status, order_prop = T)
+tt(df$military_status, 
+   order_prop = F, 
+   lvls = c("Yes, Reserve/National Guard", "Yes, Veteran", "No"), 
+   last_ord = c("Prefer not to answer", "Missing"))
 ```
 
 
 ## Education 
 **What is the highest level of education that you have completed?** 
 ```{r, message = FALSE, echo = FALSE }
-tt(df$education_level, order_prop = T)
+tt(df$education_level, 
+   order_prop = F,
+   lvls = c("High School Diploma or GED", 
+            "Associate's Degree", 
+            "Bachelor’s Degree", 
+            "Post-bachelor’s Work, no Higher Degree", 
+            "Master’s or Professional Degree (MA, MPP, JD, etc.)", 
+            "Doctoral Degree (PhD)", 
+            "Other"), 
+    last_ord = c("Prefer not to answer", "Missing")
+   )
 ```
 
 
@@ -329,7 +367,11 @@ TODO: Code responses coded to Census metropolitan areas
 median_hist(
   df$years_worked_political_data, 
   x_label = "Years in Politics & Data", 
-  med_label = "The median years of experience is")
+  med_label = "The median years of experience is", 
+  med_label_x_cord = median(df$years_worked_political_data, na.rm = TRUE) + 20,
+  med_label_y_cord = 50)
+
+
 ```
 
 ### Politics, Not Data
@@ -339,8 +381,11 @@ median_hist(
 median_hist(
   df$years_worked_political, 
   x_label = "Years in Politics But Not Data", 
-  med_label = "The median years of experience is"
-            )
+  med_label = "The median years of experience is",
+  med_label_x_cord = median(df$years_worked_political, na.rm = TRUE) + 20,
+  med_label_y_cord = 50
+  )
+            
 ```
 
 
@@ -349,7 +394,10 @@ median_hist(
 ```{r, message = FALSE, echo = FALSE }
 median_hist(df$years_worked_data, 
             x_label = "Years in Data But Not Politics", 
-            med_label = "The median years of experience is")
+            med_label = "The median years of experience is",
+            med_label_x_cord = median(df$years_worked_data, na.rm = TRUE) + 10,
+            med_label_y_cord = 50
+  )
 ```
 
 
@@ -364,9 +412,12 @@ total_work_experience <- df %>%
   filter(!is.na(sum))
 
 median_hist(
-  total_work_experience, 
+  total_work_experience$sum, 
   x_label = "Total Years", 
-  med_label = "The median years of experience is")
+  med_label = "The median years of experience is", 
+  med_label_x_cord = median(total_work_experience$sum, na.rm = TRUE) + 17,
+  med_label_y_cord = 50
+  )
 ```
 
 ## Employment Status {.tabset}
@@ -390,9 +441,95 @@ mult_resp(df, "employment_status_cycle_20",  order_prop = T)
 
 ### Involvement in Data/Analytics/Tech
 
-TODO: make this data viz like https://www.crackthecode.io/salary2017#employment_status 
-
 * Is the primary focus (>40% of resources) of your **organization** data, analytics, or technology?
+* Is the primary focus (>40% of resources) of your **team** data, analytics, or technology?
+* Is the primary focus (>40% of time) of your **role** data, analytics or technology?
+
+
+```{r}
+# make a df of just the columns/values we are interested in 
+tmp <- df %>%
+  select(data_40_org, data_40_team, data_40_role) %>%
+  filter(!is.na(data_40_org), !is.na(data_40_team),!is.na(data_40_role))
+
+# reshape the df 
+tmp$category <- row.names(tmp)
+tmp2 <- reshape2::melt(tmp, id.vars = "category")
+
+
+plot_data <- tmp2 %>% 
+  # for each question, get percents of people who answered yes and no 
+  count(variable, value) %>% 
+  group_by(variable) %>%
+  mutate(pct = n /sum(n)) %>% 
+  # create label for bar plot 
+  mutate(bar_label =  paste0(
+     sprintf("%.1f%%", round(100 * pct)), " (N = ", n, ")")) %>%
+  # for the "no" values make the bar_label empty string 
+  mutate(bar_label= ifelse(value == "No", " ", bar_label))%>%
+  # rename values in variable column so it easier to plot 
+  mutate(variable = case_when(
+   variable == "data_40_org" ~ "Organization", 
+   variable == "data_40_team" ~ "Team", 
+   variable == "data_40_role" ~ "Role"
+   )
+  ) %>%
+  # factor columns so it follows a particular ordering
+  mutate(
+    variable = factor(variable,
+                      levels = c("Role", "Team", "Organization")))
+
+
+p <- ggplot(plot_data, aes(x = variable, y = pct, fill = value)) +
+  geom_col(width = 0.7) +
+  coord_flip() +
+  scale_fill_viridis_d() +
+  theme_bw() +
+  # remove x and y axis label 
+   theme(axis.title.x = element_blank(),
+         axis.title.y = element_blank()
+         ) +
+  # make the x-axis into percents 
+  scale_y_continuous(labels = scales::percent) + 
+  # add labels 
+  geom_text(aes(label = bar_label),
+            position = position_stack(vjust = 0.5)) + 
+  # edit legend: remove the key and reverse the order of the values 
+  theme(legend.title = element_blank()) + 
+  guides(fill = guide_legend(reverse = TRUE))
+
+p
+
+```
+
+```{r}
+tm2 <- read.table(text="County  Group   Plan1   Plan2   Plan3   Plan4   Plan5   Total
+County1 Group1  2019    597 513 5342    3220    11691
+                 County2 Group1  521 182 130 1771    731 3335
+                 County3 Group1  592 180 126 2448    1044    4390
+                 County4 Group1  630 266 284 2298    937 4415
+                 County5 Group1  708 258 171 2640    1404    5181
+                 County6 Group1  443 159 71  1580    528 2781
+                 County7 Group1  492 187 157 1823    900 3559
+                 County8 Group1  261 101 84  1418    357 2221", header = TRUE)
+
+ tm2 %>% 
+      filter(Group == "Group1") %>% 
+      select(-Total) %>% 
+      gather(key = `Plan Type`, value = value, -County, -Group) %>% 
+      group_by(County, Group) %>% 
+      mutate(Percentage = value/sum(value)) %>% 
+      ggplot(aes(x = County, y = Percentage, fill = `Plan Type`,
+                 label = paste0(round(Percentage*100), "%"))) +
+      geom_col(position = position_stack(), color = "black") +
+      geom_text(position = position_stack(vjust = .5)) +
+      coord_flip() +
+      scale_y_continuous(labels = scales::percent_format()) 
+ 
+ #+
+      facet_wrap(~Group)
+```
+
 
 ```{r, message = FALSE, echo = FALSE }
 tt(df$data_40_org)
@@ -456,44 +593,46 @@ tt(df$num_staffers, order_prop = F,
 ```
 
 ### By Gender 
-TODO
+TODO: Do we remove people who didnt answer the gender question
 error message : Vectorizing 'formattable' elements may not preserve their attributes
 
-<!-- ```{r, message = FALSE, echo = FALSE } -->
-<!-- by_demo <- df %>%  select(num_staffers, gender) %>% -->
-<!--     # group by variable -->
-<!--     group_by(num_staffers, gender) %>% -->
-<!--     # get raw counts -->
-<!--     summarise(unweighted_n = n()) %>% -->
-<!--  #   ungroup() %>% -->
-<!--     tidyr::complete(fill = list(unweighted_n = 0)) %>% -->
-<!--     # create probabilities within each response x demographic pair -->
-<!--     mutate(unweighted_prop = unweighted_n/sum(unweighted_n)) %>% -->
-<!--    mutate(unweighted_prop = formattable::percent(unweighted_prop, 0), -->
-<!--            unweighted_n = formattable::digits(unweighted_n, 0)) -->
+```{r, message = FALSE, echo = FALSE }
+# by_demo <- df %>%
+#   select(num_staffers, gender_bin) %>%
+#   filter(!is.na(num_staffers), !is.na(gender_bin)) %>%
+#   # group by variable
+#   group_by(num_staffers, gender_bin) %>%
+#   # get raw counts
+#   summarise(unweighted_n = n()) %>%
+#   #ungroup() %>%
+#   tidyr::complete(fill = list(unweighted_n = 0)) %>%
+#   # create probabilities within each response x demographic pair
+#   mutate(unweighted_prop = unweighted_n/sum(unweighted_n)) %>%
+#   mutate(unweighted_prop = formattable::percent(unweighted_prop, 0),
+#            unweighted_n = formattable::digits(unweighted_n, 0))
+# 
+# overall <- tt(df$num_staffers, raw_df = T) %>%
+#   mutate(gender = "All") %>%
+#   select(num_staffers = variable,  gender, unweighted_n, unweighted_prop)
+# 
+# plot_df_overall <- overall %>%
+#   select(num_staffers)
+# 
+# 
+# dat <- overall %>% gather( unweighted_n,  unweighted_prop, -num_staffers)
+# 
+# pivot_wider(overall, gender, unweighted_n ,unweighted_prop, fill = 0)
+# 
+# 
+#  df %>%
+#       rename(' ' = variable,
+#              'Proportion' = unweighted_prop,
+#              'N' = unweighted_n) %>%
+#       formattable::formattable(list(
+#         Proportion = formattable::proportion_bar()),
+#         align = c('l', 'r', 'r'))
 
-<!-- overall <- tt(df$num_staffers, raw_df = T) %>% -->
-<!--   mutate(gender = "All") %>% -->
-<!--   select(num_staffers = variable,  gender, unweighted_n, unweighted_prop) -->
-
-<!-- plot_df_overall <- overall %>% -->
-<!--   select(num_staffers) -->
-
-
-<!-- dat <- overall %>% gather( unweighted_n,  unweighted_prop, -num_staffers) -->
-
-<!-- pivot_wider(overall, gender, unweighted_n ,unweighted_prop, fill = 0) -->
-
-
-<!--  df %>% -->
-<!--       rename(' ' = variable, -->
-<!--              'Proportion' = unweighted_prop, -->
-<!--              'N' = unweighted_n) %>% -->
-<!--       formattable::formattable(list( -->
-<!--         Proportion = formattable::proportion_bar()), -->
-<!--         align = c('l', 'r', 'r')) -->
-
-<!-- ``` -->
+```
 
 
 
@@ -503,11 +642,9 @@ TODO
 ## Time Writing Code {.tabset}
 **What percentage of your time do you spend directly conducting analysis or writing code - as opposed to other work such as communicating with external partners or managing staff?** 
 
-TODO: Multiply perc_time_coding by 100, so values are in terms of percents. 
-
 ### Overall 
 ```{r, message = FALSE, echo = FALSE }
-x <- df$perc_time_coding 
+x <- df$perc_time_coding * 100
 plot <- ggplot(
     as.data.frame(x[!is.na(x)]),
       aes(
@@ -522,54 +659,74 @@ plot
 
 ### By Seniority
 
-TODO: 
-
-* make this into a function (add the ability to order, add x-axis values)
-* figure out alternative data visualizations 
-* remove 'Freelance' and 'Other' 
-* add N-size to graphs
 ```{r, message = FALSE, echo = FALSE }
 tmp <- df[which(!is.na(df$perc_time_coding) &
-                  !is.na(df$seniority_level)),] 
+                  !is.na(df$seniority_level)),]
 tmp <- df %>%
   filter(!is.na(seniority_level) & !is.na(perc_time_coding)) %>%
-  mutate(seniority_level = factor(seniority_level, levels = c("Other",
-     "Freelance", 
-     "Entry-Level",
-     "Mid-Level", 
-     "Senior-Level, but not Department Head", 
-     "Department Head", 
-     "Organization Head, President or C-Level")))
+  # order seniority by most to least senior 
+  mutate(seniority_level = factor(seniority_level,
+                                  levels = c("Other",
+                                             "Freelance",
+                                             "Entry-Level",
+                                             "Mid-Level",
+                                             "Senior-Level, but not Department Head",
+                                             "Department Head",
+                                             "Organization Head, President or C-Level"))) %>%
+  # get Ns for people in each seniority bucket 
+  group_by(seniority_level) %>% 
+  mutate(seniority_level_n = n())  %>% 
+  ungroup() %>% 
+  # Add n-size to seniority_level label 
+  mutate(seniority_level_label = paste0(seniority_level, " (N = ", seniority_level_n, ")")) %>%
+  # factor the label column based on the previous ordering by seniority type 
+  mutate(seniority_level_label = factor(seniority_level_label,
+                                        levels = 
+                                        unique(seniority_level_label[order(seniority_level)]),
+                                  ordered = TRUE))
 
-
-# tmp$perc_time_coding <- droplevels(tmp$perc_time_coding) 
-ggplot(tmp, aes(x = perc_time_coding, y = seniority_level)) +
+# plot the density plot
+ggplot(tmp, aes(x = perc_time_coding * 100,
+           y = seniority_level_label)) +
   geom_density_ridges(rel_min_height = 0.01) +
-  scale_y_discrete(expand = c(0.01, 0)) +
-  scale_x_discrete(expand = c(0.01, 0)) +
  labs(x = "% of Time Conducting Analysis or Writing Code",
-      y = "Seniority") +
-  theme_ridges() + theme_bw()
+      y = " ") + 
+  theme_ridges() + 
+  theme(axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10)) 
+
+
+
+
 ```
 
 ### By Job Type 
 
-TODO: 
-
-* Figure out a way to bin job_team_function
-* add N-size to graphs
-
 ```{r, message = FALSE, echo = FALSE }
-tmp <- df[which(!is.na(df$perc_time_coding) &
-                  !is.na(df$job_team_function)),]
-# tmp$perc_time_coding <- droplevels(tmp$perc_time_coding) 
-ggplot(tmp, aes(x = perc_time_coding, y = job_team_function)) +
+tmp <- df %>%
+  filter(!is.na(job_team_function) & !is.na(perc_time_coding)) %>%
+  # calculate n-size for graph 
+  group_by(job_team_function) %>% 
+  mutate(job_team_n = n())  %>% 
+  ungroup() %>% 
+  # Add n-size to seniority_level label 
+  mutate(job_team_label = paste0(job_team_function, " (N = ", job_team_n, ")")) %>%
+  # factor the label column in alphabetical order
+  mutate(job_team_label = factor(job_team_label,
+                                        levels = 
+                                        unique(job_team_label[order(job_team_label, decreasing = TRUE)]),
+                                  ordered = TRUE))
+
+# plot the density plot
+ggplot(tmp, aes(x = perc_time_coding * 100,
+           y = job_team_label)) +
   geom_density_ridges(rel_min_height = 0.01) +
-  scale_y_discrete(expand = c(0.01, 0)) +
-  scale_x_discrete(expand = c(0.01, 0)) +
  labs(x = "% of Time Conducting Analysis or Writing Code",
-      y = "Job Type") +
-  theme_ridges() + theme_bw()
+      y = " ") + 
+  theme_ridges() + 
+  theme(axis.text = element_text(size = 10), 
+        axis.title = element_text(size = 10)) 
+
 ```
 
 
@@ -587,7 +744,65 @@ How comfortable are you with the following skills and tools?
 
 ### Skills + Tools
 
-TODO
+#### Skill Level 
+This graph displays the full distribution of responses to skill level. Responses are ordered by the proportion of respondents who rate themselves as having intermediate or advanced skills.
+
+
+<!-- ```{r} -->
+<!-- # make a df of just the columns/values we are interested in  -->
+<!-- tmp <- df %>% -->
+<!--   select(data_40_org, data_40_team, data_40_role) %>% -->
+<!--   filter(!is.na(data_40_org), !is.na(data_40_team),!is.na(data_40_role)) -->
+
+<!-- # reshape the df  -->
+<!-- tmp$category <- row.names(tmp) -->
+<!-- tmp2 <- reshape2::melt(tmp, id.vars = "category") -->
+
+
+<!-- plot_data <- tmp2 %>%  -->
+<!--   # for each question, get percents of people who answered yes and no  -->
+<!--   count(variable, value) %>%  -->
+<!--   group_by(variable) %>% -->
+<!--   mutate(pct = n /sum(n)) %>%  -->
+<!--   # create label for bar plot  -->
+<!--   mutate(bar_label =  paste0( -->
+<!--      sprintf("%.1f%%", round(100 * pct)), " (N = ", n, ")")) %>% -->
+<!--   # for the "no" values make the bar_label empty string  -->
+<!--   mutate(bar_label= ifelse(value == "No", " ", bar_label))%>% -->
+<!--   # rename values in variable column so it easier to plot  -->
+<!--   mutate(variable = case_when( -->
+<!--    variable == "data_40_org" ~ "Organization",  -->
+<!--    variable == "data_40_team" ~ "Team",  -->
+<!--    variable == "data_40_role" ~ "Role" -->
+<!--    ) -->
+<!--   ) %>% -->
+<!--   # factor columns so it follows a particular ordering -->
+<!--   mutate( -->
+<!--     variable = factor(variable, -->
+<!--                       levels = c("Role", "Team", "Organization"))) -->
+
+
+<!-- p <- ggplot(plot_data, aes(x = variable, y = pct, fill = value)) + -->
+<!--   geom_col(width = 0.7) + -->
+<!--   coord_flip() + -->
+<!--   scale_fill_viridis_d() + -->
+<!--   theme_bw() + -->
+<!--   # remove x and y axis label  -->
+<!--    theme(axis.title.x = element_blank(), -->
+<!--          axis.title.y = element_blank() -->
+<!--          ) + -->
+<!--   # make the x-axis into percents  -->
+<!--   scale_y_continuous(labels = scales::percent) +  -->
+<!--   # add labels  -->
+<!--   geom_text(aes(label = bar_label), -->
+<!--             position = position_stack(vjust = 0.5)) +  -->
+<!--   # edit legend: remove the key and reverse the order of the values  -->
+<!--   theme(legend.title = element_blank()) +  -->
+<!--   guides(fill = guide_legend(reverse = TRUE)) -->
+
+<!-- p -->
+<!-- ``` -->
+
 
 ### Learn 
 **How did you learn the skills and tools you use weekly for your job? Please pick your top two options** 
@@ -760,7 +975,6 @@ mult_resp(df, "prof_dev_used", order_prop = T)
 
 ## Respondent Characteristics {.tabset}
 
-
 ### Gender
 Universe: Had to answer the demographic and salary questions. 
 ```{r, message = FALSE, echo = FALSE }
@@ -770,31 +984,15 @@ salary_cross(x = df,
              salary = compensation, 
              salary_bin = compensation_bin, 
            #  salary_bin_numeric = compensation_bin_numeric,
-             order_by = "mean")
-             
-             # lvls = c("Different gender identity, prefer to specify",
-             #          "Cis woman",
-             #          "Trans woman",
-             #          "Trans man",
-             #          "Prefer not to answer",
-             #          "Cis man",
-             #          "Gender non-binary or non-conforming"))
+             order_by = "levels",
+           lvls = c("Different gender identity, prefer to specify",
+                      "Cis woman",
+                      "Trans woman",
+                      "Trans man",
+                      "Prefer not to answer",
+                      "Cis man",
+                      "Gender non-binary or non-conforming")) 
 
-
- # lvls <- c("Different gender identity, prefer to specify",
- #          "Cis woman",
- #          "Trans woman",
- #          "Trans man",
- #          "Prefer not to answer",
- #          "Cis man",
- #          "Gender non-binary or non-conforming")
- # last_ord <- c("Trans man")
- #  tmp2 <- tmp %>%
- #    mutate(
- #      gender =
- #      factor(gender,
- #             levels = c(lvls[! lvls %in% last_ord], last_ord))) %>%
- #    arrange(gender)
 ```
 
 Graph Universe: Had to answer the demographic, salary, years of experience questions. Remove people who selected 'Prefer not to answer'
@@ -902,47 +1100,6 @@ ggplot(df2, aes(x = totalyears, y = salary_total, color = race)) +
   theme(legend.title=element_blank())+
   xlab("Years of Experience")+
   ylab("Salary")
-
-```
-
-
-### Gender x Race / Ethnicity (Not Binned)
-Universe: Had to answer the demographic and salary questions. 
-```{r, message = FALSE, echo = FALSE }
-
-df1 <- df %>% 
-  mutate(gender_race = paste(race_bin, gender, sep = " | ")) %>% 
-  select(gender_race, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(gender_race), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
-
-srg_table <- df1  %>%
-group_by(gender_race) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(gender_race, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = gender_race,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
-
-srg_table
 
 ```
 
@@ -1207,6 +1364,17 @@ summarise(
         align = c('l', 'r', 'r', 'r'))
 
 srg_table
+```
+
+
+```{r}
+salary_cross(x = df,
+             variable = org_type,
+             salary = compensation,
+             salary_bin = compensation_bin, 
+             order_by = "mean", # mean, levels, alpha
+             lvls = NULL,
+             last_ord = NULL)
 ```
 
 ### Seniority 
