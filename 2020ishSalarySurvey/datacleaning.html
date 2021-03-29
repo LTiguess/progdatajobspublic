@@ -764,7 +764,8 @@ df &lt;- df %&gt;%
   ), 
   race_bin2 = case_when(
     race_bin != &#39;White&#39; &amp;
-      race_bin !=  &#39;Other/Prefer Not to Say/Missing&#39; ~ &#39;POC&#39;
+      race_bin !=  &#39;Other/Prefer Not to Say/Missing&#39; ~ &#39;POC&#39;, 
+    TRUE ~ race_bin
     )
   ) </code></pre>
 </div>
@@ -887,12 +888,10 @@ readr::write_csv(
 <pre class="r"><code># upload results file to google drive, since we can&#39;t put it in git
 # and the google sheets upload was causing issues/ misaligned columns
 
-folder &lt;- &#39;https://drive.google.com/drive/folders/1iWT_PmE6Fo6jqVFVc3c6d-12j7PmE7T5/&#39; 
-
 googledrive::drive_upload(
   here::here(&quot;data&quot;, &quot;survey_responses.csv&quot;),
-  path = googledrive::as_dribble(folder), 
-  name = &quot;survey_responses_clean.csv&quot;
+  # comes from a file ID to replace
+  path = &quot;1urZL8JCFdjFDTARpClQbCtX41NV3TSML&quot;
 )</code></pre>
 <pre><code>## Using an auto-discovered, cached token.
 ## To suppress this message, modify your code or options to clearly consent to the use of a cached token.
@@ -902,7 +901,7 @@ googledrive::drive_upload(
 <pre><code>## Local file:
 ##   * /Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/survey_responses.csv
 ## uploaded into Drive file:
-##   * survey_responses_clean.csv: 1CCqYzWr81U5V55OiFatcvsvIyjnNTH_U
+##   * 1urZL8JCFdjFDTARpClQbCtX41NV3TSML: 1ohlqo6xSkAN9f1Nu0Q-ysNTGZJKhRm0P
 ## with MIME type:
 ##   * text/csv</code></pre>
 </div>

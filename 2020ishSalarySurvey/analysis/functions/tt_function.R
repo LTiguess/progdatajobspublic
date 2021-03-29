@@ -9,10 +9,8 @@ tt <- function(x, weights = NULL,
   # lvls = level order in x (if you want it ordered)
   # necode_na = how to recode NA values, defaults to 'Refused'
   # raw_df = if T, return markdown, if F return HTML
-  # order_prop = if T, order by proprotion, if F, order alphabetical
+  # order_prop = if T, order by proportion, if F and lvls is null, order alphabetical
   # last_ord = whatever you order by, the inputs here are put in the bottom of the ordering
-  
-  
   
   # conditions to run
   stopifnot(#is.vector(x),
@@ -23,11 +21,14 @@ tt <- function(x, weights = NULL,
   if(is.null(weights)) weights <- rep(1, length(x))
   
   if(is.factor(x) & sum(is.na(x)) > 0){
+    # if x is already a factor, don't do any sorting on the levels 
     x <- factor(x, levels = c(levels(x), recode_na))
   }
   
   if(is.character(x) & sum(is.na(x)) > 0){
-    x <- factor(x, levels = c(unique(x), recode_na))
+    # default to sorting by alphabetical in x is a character vector
+    # if order_prop = T, this gets overwritten later on  
+    x <- factor(x, levels = sort(c(unique(x), recode_na)))
   }
   
   # add ordered factor
@@ -61,7 +62,7 @@ tt <- function(x, weights = NULL,
     df <- df %>%
       arrange(variable)
   }
-  
+
   df <- df %>%
     select(variable, unweighted_prop, unweighted_n) %>%
     mutate(unweighted_prop = formattable::percent(unweighted_prop, 0),

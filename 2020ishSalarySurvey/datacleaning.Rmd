@@ -350,7 +350,8 @@ df <- df %>% mutate(
   ), 
   race_bin2 = case_when(
     race_bin != 'White' &
-      race_bin !=  'Other/Prefer Not to Say/Missing' ~ 'POC'
+      race_bin !=  'Other/Prefer Not to Say/Missing' ~ 'POC', 
+    TRUE ~ race_bin
     )
   ) 
 ```
@@ -489,12 +490,10 @@ readr::write_csv(
 # upload results file to google drive, since we can't put it in git
 # and the google sheets upload was causing issues/ misaligned columns
 
-folder <- 'https://drive.google.com/drive/folders/1iWT_PmE6Fo6jqVFVc3c6d-12j7PmE7T5/' 
-
 googledrive::drive_upload(
   here::here("data", "survey_responses.csv"),
-  path = googledrive::as_dribble(folder), 
-  name = "survey_responses_clean.csv"
+  # comes from a file ID to replace
+  path = "1urZL8JCFdjFDTARpClQbCtX41NV3TSML"
 )
 ```
 
