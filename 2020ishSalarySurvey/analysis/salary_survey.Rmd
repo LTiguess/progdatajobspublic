@@ -71,6 +71,11 @@ googledrive::drive_download(
 # read into R
 df <- readr::read_csv(here::here("data", "survey_responses.csv"))
 
+# read supporting data files in as well
+compensation_bin_crosswalk <- readr::read_csv(
+  here::here("data", "compensation_bin_crosswalk.csv")
+)
+
 # source all functions 
 func_files <- list.files(
   path = here::here("analysis", "functions"), full.names = TRUE
@@ -170,8 +175,6 @@ median_hist(df$age,
 tt(df$age_bin, order_prop = F)
 ```
 
-
-
 ### Sexuality 
 **Do you consider yourself to be ...?**
 ```{r, message = FALSE, echo = FALSE }
@@ -180,8 +183,6 @@ tt(df$sexual_orientation,
    last_ord = c("Prefer not to answer", "Missing")
    )
 ```
-
-
 
 ### Disability 
 **Do you identify as a disabled? You are considered to have a disability if you have a physical or mental impairment or medical condition that substantially limits a major life activity, or if you have a history or record of such an impairment or medical condition.**
@@ -192,7 +193,6 @@ tt(df$disabled,
    lvls = c("Yes, I have or previously had a disability", "No, I don't have a disability", "Other"),
    last_ord = c("Prefer not to answer", "Missing"))
 ```
-
 
 
 ### Military Status 
@@ -227,29 +227,35 @@ tt(df$education_level,
 TODO: 
 
 * Looking into visualizing the data as a map
-* Currently, using country determined by IP Address. Need to switch out with self reported country. 
 
 ### Country 
 **What country do you live in? **
 ```{r, message = FALSE, echo = FALSE }
+# this is now user-submitted rather than IP generated 
+
 tt(df$country, order_prop = T)
 ```
-
-
-
 
 ### Area 
 **What's your zip code?**
 
 TODO: Code responses coded to Census metropolitan areas
-<!-- ```{r} -->
+```{r}
+low_num_areas <- df %>% 
+  count(geo_name) %>%
+  filter(n < 5)
 
-<!-- ``` -->
+df$geo_name_bin <- df$geo_name
+df$geo_name_bin[df$geo_name %in% low_num_areas$geo_name] <- "Other"
+
+tt(df$geo_name_bin, order_prop = T, last_ord = "Missing")
+```
 
 
 ## Work Experience {.tabset}
 ### Politics & Data 
 **How many years of work experience do you have in progressive politics and in data, analytics, and technology (i.e., how many years have you been a progressive data, analytics, or technology practitioner)?**
+
 ```{r, message = FALSE, echo = FALSE }
 median_hist(
   df$years_worked_political_data, 
@@ -257,8 +263,6 @@ median_hist(
   med_label = "The median years of experience is", 
   med_label_x_cord = median(df$years_worked_political_data, na.rm = TRUE) + 20,
   med_label_y_cord = 50)
-
-
 ```
 
 ### Politics, Not Data
@@ -272,7 +276,6 @@ median_hist(
   med_label_x_cord = median(df$years_worked_political, na.rm = TRUE) + 20,
   med_label_y_cord = 50
   )
-            
 ```
 
 
@@ -1429,18 +1432,18 @@ TODO
 ## Is Unionized? 
 **Is your organization unionized or does it have one or more recognized bargaining units?**
 ```{r, message = FALSE, echo = FALSE }
-tt(df$is_unionized)
+tt(df$is_unionized, order_prop = T)
 ```
 
 ## Union Member? 
 **Are you a member of the union/bargaining unit?**
 ```{r, message = FALSE, echo = FALSE }
-tt(df$bargaining_unit_member)
+tt(df$bargaining_unit_member[df$is_unionized == "Yes"], order_prop = T)
 ```
 
 
 ## Date of Unionization 
 **When did your organization unionize?**
 ```{r, message = FALSE, echo = FALSE }
-tt(df$when_unionized)
+tt(df$when_unionized[df$is_unionized == "Yes"], order_prop = T)
 ```

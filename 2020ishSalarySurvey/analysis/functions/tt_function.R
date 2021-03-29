@@ -2,7 +2,7 @@
 tt <- function(x, weights = NULL,
                lvls = NULL, recode_na = 'Missing',
                raw_df = F,
-               order_prop = F, last_ord = NULL){
+               order_prop = F, last_ord = 'Missing'){
   
   # x = vector of values
   # weights = weights
