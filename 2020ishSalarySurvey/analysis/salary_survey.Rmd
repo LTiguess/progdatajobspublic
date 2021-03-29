@@ -798,7 +798,13 @@ srg_table
 In US Dollars, what is your total expected annual pre-tax income, including bonuses or commissions? This figure may be salaried or unsalaried.
 
 ```{r, message = FALSE, echo = FALSE }
-tt(df$compensation_bin)
+# input salary levels as labels, otherwise 100k is listed before 20k
+salary_lvls <- df %>% 
+  arrange(compensation_bin_numeric) %>% 
+  select(compensation_bin) %>%
+  unique() 
+
+tt(df$compensation_bin, lvls = as.vector(salary_lvls$compensation_bin))
 ```
 
 ## Benefits 

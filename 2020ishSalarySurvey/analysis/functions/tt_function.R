@@ -2,7 +2,7 @@
 tt <- function(x, weights = NULL,
                lvls = NULL, recode_na = 'Missing',
                raw_df = F,
-               order_prop = F, last_ord = 'Missing'){
+               order_prop = T, last_ord = 'Missing'){
   
   # x = vector of values
   # weights = weights
@@ -52,7 +52,7 @@ tt <- function(x, weights = NULL,
     mutate(unweighted_prop = unweighted_n/sum(unweighted_n))
   
   # Order if applicable
-  if(order_prop == TRUE){
+  if(order_prop == TRUE & is.null(lvls)){
     df <- df %>%
       arrange(desc(unweighted_prop))
     var_char <- as.character(df$variable)
