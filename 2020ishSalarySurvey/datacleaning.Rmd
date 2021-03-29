@@ -11,18 +11,18 @@ rm(list = ls())
 library(dplyr)
 library(janitor)
 
-# print working dir for reference 
+# print working dir for reference
 here::here()
 ```
 
 # Read in Data
 
-We manually pulled a csv out of Alchemer and stored that data in a 
+We manually pulled a csv out of Alchemer and stored that data in a
 Google Sheet, along with some manually created helper tabs for translating
-column names and coding free text data. 
+column names and coding free text data.
 
 ```{r}
-# currently using interactive/ in browser auth 
+# currently using interactive/ in browser auth
 # whoever is running this code must have access to the gsheet
 url <- 'https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M'
 
@@ -32,37 +32,37 @@ questions <- googlesheets4::read_sheet(url, sheet = 'Questions')
 freetext <- googlesheets4::read_sheet(url, sheet = 'Free Text')
 
 # reference data
-# real purchasing power by metro statistical area (MSA), downloaded from 
+# real purchasing power by metro statistical area (MSA), downloaded from
 # https://apps.bea.gov/iTable/iTable.cfm?reqid=70&step=30&isuri=1&major_area=5&area=xx&year=2019&tableid=104&category=8101&area_type=0&year_end=-1&classification=non-industry&state=5&statistic=1&yearbegin=-1&unit_of_measure=levels
 
 rpp <- readr::read_csv(
   # first 4 lines are notes, not data, so skip
-  here::here("data", "rpp_by_msa_2019.csv"), skip = 4) %>% 
+  here::here("data", "rpp_by_msa_2019.csv"), skip = 4) %>%
   clean_names() %>%
   rename(
-    cbsa = geo_fips, 
+    cbsa = geo_fips,
     rpp = x2019
   ) %>%
   # last 3 lines are notes that caused the parsing failure, so drop
   filter(!is.na(rpp))
 
 # geographic info for zip to CBSA downloaded from  
-# https://www.huduser.gov/portal/datasets/usps_crosswalk.html#data 
-geo <- readr::read_csv(here::here("data", "zip_to_cbsa.csv"))  %>% 
-  clean_names() 
+# https://www.huduser.gov/portal/datasets/usps_crosswalk.html#data
+geo <- readr::read_csv(here::here("data", "zip_to_cbsa.csv"))  %>%
+  clean_names()
 ```
 
 # Clean Column Names
 
 ## Create Helper DF of Clean Column Names
 
-We manually re-coded column names in the above google sheet, with 
-one tab at the question level and one tab at the response level, to 
-deal with multi-select questions that are stored spread across multiple columns. 
+We manually re-coded column names in the above google sheet, with
+one tab at the question level and one tab at the response level, to
+deal with multi-select questions that are stored spread across multiple columns.
 
-Now, we need to join the question and response level tabs together to form a 
-complete key, then use the values in that key to replace the column names 
-currently on the main dataframe. 
+Now, we need to join the question and response level tabs together to form a
+complete key, then use the values in that key to replace the column names
+currently on the main dataframe.
 
 ```{r}
 # create useful column names for multi-select questions
@@ -74,95 +74,95 @@ name_helper <- questions %>% full_join(
   by = "question_name"
 ) %>% mutate(
   col_name_final = stringr::str_c(
-    snakecase::to_snake_case(question_name_short), 
-    ".resp.", 
+    snakecase::to_snake_case(question_name_short),
+    ".resp.",
     snakecase::to_snake_case(col_name_clean)
   )
 ) %>% mutate(
   col_name_final = coalesce(
-    col_name_final, 
+    col_name_final,
     snakecase::to_snake_case(question_name_short)
   )
-) %>% unique() 
+) %>% unique()
 
 # clean up environment
 rm(columns, questions)
 ```
 
-## Remove Alchemer Added Columns 
+## Remove Alchemer Added Columns
 
 Alchemer adds a set of leading columns with geography based on IP address,
-we want to use our question instead. 
+we want to use our question instead.
 
 ```{r}
 # List alchemer added columns, coded in the google sheet as question 0
 name_helper$question_name[name_helper$question_num == 0]
 
-# we want to drop everything except the first 4 columns 
+# we want to drop everything except the first 4 columns
 drop_cols <- c(
-  "Contact ID", "Legacy Comments", "Comments", 
-  "Language", "Referer",  "SessionID", 
-  "User Agent", "Tags", "IP Address", "Longitude", "Latitude", 
+  "Contact ID", "Legacy Comments", "Comments",
+  "Language", "Referer",  "SessionID",
+  "User Agent", "Tags", "IP Address", "Longitude", "Latitude",
   "Country", "City", "State/Region", "Postal"
 )
 
-df <- df %>% 
+df <- df %>%
   select(-all_of(drop_cols))
 ```
 
-## Clean Duplicated Column Names 
+## Clean Duplicated Column Names
 
-Next, we deal with the columns that had duplicated names 
-and were renamed in the import process. Some of these are empty and need to be 
+Next, we deal with the columns that had duplicated names
+and were renamed in the import process. Some of these are empty and need to be
 dropped, others need to be renamed.
 
 ```{r}
-# find columns that were automatically renamed in the import 
+# find columns that were automatically renamed in the import
 renamed <- names(df)[grepl("....", names(df), fixed = TRUE)]
 
 # find columns where all values are NA
-empty <- df %>% 
-  select_if(~all(is.na(.))) %>% 
+empty <- df %>%
+  select_if(~all(is.na(.))) %>%
   colnames()
 
 print(union(renamed, empty))
 
-# Manually pick which cols to drop 
+# Manually pick which cols to drop
 drop_cols <- c(
   "None of the above:Which of the following benefits are you personally eligible for? Select all that apply....62",
-  "None of the above:Which of the following items have you personally done in the last year? Please select all that apply....88", 
+  "None of the above:Which of the following items have you personally done in the last year? Please select all that apply....88",
   "Option 1: Where do you want or expect to be working a year from now? Select all that apply.",
   "Option 2: Where do you want or expect to be working a year from now? Select all that apply.",
   "None of the above:Which of the following items have you personally done in the last year? Please select all that apply....163",
-  "Other, prefer to specify:What is your race / ethnicity? Please select all that apply....176", 
+  "Other, prefer to specify:What is your race / ethnicity? Please select all that apply....176",
   "Prefer not to answer:What is your race / ethnicity? Please select all that apply....178",
   "Other, prefer to specify  test:What is your race / ethnicity? Please select all that apply....179",
   "Other, prefer to specify  test:What is your race / ethnicity? Please select all that apply....182"
 )
 
-df <- df %>% 
+df <- df %>%
   select(-all_of(drop_cols))
 ```
 
 ```{r}
-# find remaining columns that were automatically renamed in the import 
+# find remaining columns that were automatically renamed in the import
 renamed <- names(df)[grepl("....", names(df), fixed = TRUE)]
 
 revert_names <- function(x){
-  
-  # check whether name needs to be fixed 
+
+  # check whether name needs to be fixed
   if(grepl("....", x, fixed = TRUE)){
-    
+
     # remove the periods and number that read_sheet inserted
-    vec <- stringr::str_remove(x, "\\.{4}\\d{2,}$") 
-    
+    vec <- stringr::str_remove(x, "\\.{4}\\d{2,}$")
+
     # add back the period that was in the original column name
-    vec <- paste0(vec, ".") 
-    
+    vec <- paste0(vec, ".")
+
   } else {
     vec <- x
   }
-  
+
   return(vec)
 }
 
@@ -176,40 +176,40 @@ colnames(df) <- purrr::map_chr(
 ## Recode Column Names with Values from Helper Table
 
 Next, we use the newly created column names as key-value pairs, and substitute
-the current column names for their more helpful versions. 
+the current column names for their more helpful versions.
 
 ```{r}
-# TODO: Updated: Deal with the technical and non technical versions 
+# TODO: Updated: Deal with the technical and non technical versions
 # of the column "None of the above:Which of the following items have you personally done in the last year? Please select all that apply."      
-# manually rename by position 
+# manually rename by position
 stopifnot(
-  colnames(df)[144] == 
+  colnames(df)[144] ==
     "None of the above:Which of the following items have you personally done in the last year? Please select all that apply."
 )
 stopifnot(
-  colnames(df)[158] == 
+  colnames(df)[158] ==
     "Other, prefer to specify:What is your race / ethnicity? Please select all that apply."
 )
 
 df <- df %>%
   rename(
-    "projects_done_technical.resp.none" = 144, 
+    "projects_done_technical.resp.none" = 144,
     "race.resp.other_specify_freetext" = 158
   )
 
 # replace original names with updated versions, matching on old names
-colnames(df) <- coalesce( 
+colnames(df) <- coalesce(
   name_helper$col_name_final[
-    match(names(df), name_helper$col_name_original)], 
+    match(names(df), name_helper$col_name_original)],
   colnames(df))
 ```
 
 # Recode Column Values
 
 Alchemer stores the response to the multi-select question as the text of
-the response, but we want to transform these to a boolean for easy counting. 
-For example, in the column `negotiation_result.resp.increased_money`, 
-we set `Yes, I increased my compensation` to be `TRUE`. Missing values are NA. 
+the response, but we want to transform these to a boolean for easy counting.
+For example, in the column `negotiation_result.resp.increased_money`,
+we set `Yes, I increased my compensation` to be `TRUE`. Missing values are NA.
 
 ```{r}
 # Among columns for multi-select responses, turn text to TRUE
@@ -221,51 +221,51 @@ multi_cols <- colnames(df)[
     ! grepl("other_specify", colnames(df), fixed = TRUE)
 ]
 
-df <- df %>% 
+df <- df %>%
   mutate_at(
-    all_of(multi_cols), 
+    all_of(multi_cols),
     ~ifelse(!is.na(.x), TRUE, NA)
   )
 ```
 
-# Bin Variables 
+# Bin Variables
 
 ## Eligible for Survey
 
 ```{r}
 df <- df %>% mutate(
-  eligible = 
+  eligible =
     # must have answered all the questions in the work in politics section
-    # if any are NA, then the response is ineligible 
+    # if any are NA, then the response is ineligible
     ! is.na(work_in_politics) &
     ! is.na(data_40_org) &
     ! is.na(data_40_team) &
     ! is.na(data_40_role) &
-    # must have said they worked in politics 
+    # must have said they worked in politics
     work_in_politics %in% c("Yes", "Did but employment ended post-election") &
     # either org, team, or role must be data focused
     any(
-      data_40_org != 'No', 
+      data_40_org != 'No',
       data_40_team != 'No' ,
       data_40_role != 'No'
     )
   )
-    
-# Gut Check Logic 
+
+# Gut Check Logic
 
 # most people who completed the survey are eligible
 df %>% tabyl(status, eligible)
 
 # most people got kicked out for not answering the questions
-df %>% filter(eligible == FALSE) %>% 
+df %>% filter(eligible == FALSE) %>%
   tabyl(data_40_org, data_40_team, data_40_role)
 
-# 85 people got kicked out for saying they didn't work in politics 
-df %>% filter(eligible == FALSE) %>% 
+# 85 people got kicked out for saying they didn't work in politics
+df %>% filter(eligible == FALSE) %>%
   tabyl(work_in_politics)
 
 # potentially some misunderstanding of the question, but not much
-df %>% filter(work_in_politics == "No") %>% 
+df %>% filter(work_in_politics == "No") %>%
   tabyl(org_type)
 ```
 
@@ -274,28 +274,28 @@ df %>% filter(work_in_politics == "No") %>%
 ```{r}
 df <- df %>% mutate(
   gender_bin = case_when(
-    gender == "Cis man" ~ "Cis man", 
+    gender == "Cis man" ~ "Cis man",
     gender == "Prefer not to answer" ~ "Prefer not to answer",
     gender != "Prefer not to answer" |
-      gender != "Cis man" ~ 'Non-Cis man'), 
+      gender != "Cis man" ~ 'Non-Cis man'),
   gender_cis = case_when(
-    gender %in% c("Cis man", "Cis Woman") ~ "Cisgender", 
+    gender %in% c("Cis man", "Cis Woman") ~ "Cisgender",
     gender %in% c(
-      "Different gender identity, prefer to specify", 
-      "Gender non-binary or non-conforming", 
-      "Trans man", "Trans woman") ~ "Trans or NonBinary", 
+      "Different gender identity, prefer to specify",
+      "Gender non-binary or non-conforming",
+      "Trans man", "Trans woman") ~ "Trans or NonBinary",
     gender == "Prefer not to answer" ~ "Prefer not to answer"
   )
 )
 ```
 
-## Sexuality 
+## Sexuality
 
 ```{r}
 df <- df %>% mutate(
   sexual_orientation_bin = case_when(
-    sexual_orientation == "Heterosexual/straight" ~ "Heterosexual", 
-    sexual_orientation == "Prefer not to answer" ~ "Prefer not to answer", 
+    sexual_orientation == "Heterosexual/straight" ~ "Heterosexual",
+    sexual_orientation == "Prefer not to answer" ~ "Prefer not to answer",
     TRUE ~ "Queer"
   )
 )
@@ -309,27 +309,27 @@ labels <- c('20-24', '25-29', '30-34',
             '35-39', '40-44','45-49',
             '50-54', '55-59', '60+')
 df$age <- 2020 - as.numeric(df$yob)
-df$age_bin <- cut(df$age, breaks = breaks, labels = labels) 
+df$age_bin <- cut(df$age, breaks = breaks, labels = labels)
 ```
 
 ## Race
 
 ```{r}
-race_cols <- df %>% 
-  select(starts_with("race.resp"), 
-         - race.resp.other_specify, 
+race_cols <- df %>%
+  select(starts_with("race.resp"),
+         - race.resp.other_specify,
          - race.resp.other_specify_freetext) %>%
   colnames()
 
 df <- df %>%
   rowwise() %>%
   # for each respondent, count the number of races selected
-  mutate(n_resp_selected = sum(c_across(race_cols), na.rm = TRUE)) 
+  mutate(n_resp_selected = sum(c_across(race_cols), na.rm = TRUE))
 
 df <- df %>% mutate(
   # if someone has selected multiple races, code as multi-racial
   # if someone selected no races, code as missing/other/prefer not to say
-  # otherwise, code as the 1 race selected 
+  # otherwise, code as the 1 race selected
   race_bin = case_when(
     race.resp.white == TRUE &
       n_resp_selected == 1 ~ 'White',
@@ -339,32 +339,32 @@ df <- df %>% mutate(
       n_resp_selected  == 1 ~ 'Native American',
     race.resp.asian == TRUE &
       n_resp_selected  == 1 ~ 'Asian or Asian American (including South Asian)',
-    race.resp.native_pacific == TRUE  & 
+    race.resp.native_pacific == TRUE  &
       n_resp_selected  == 1 ~ 'Native Hawaiian or Pacific Islander',
-    race.resp.latinx == TRUE & 
-      n_resp_selected  == 1 ~ 'Hispanic or Latinx', 
-    race.resp.middle_eastern == TRUE  & 
+    race.resp.latinx == TRUE &
+      n_resp_selected  == 1 ~ 'Hispanic or Latinx',
+    race.resp.middle_eastern == TRUE  &
       n_resp_selected  == 1 ~ 'Middle Eastern',
-    n_resp_selected  > 1 ~ 'Multi-Racial', 
+    n_resp_selected  > 1 ~ 'Multi-Racial',
     n_resp_selected  == 0 ~ 'Other/Prefer Not to Say/Missing'
-  ), 
+  ),
   race_bin2 = case_when(
     race_bin != 'White' &
-      race_bin !=  'Other/Prefer Not to Say/Missing' ~ 'POC', 
+      race_bin !=  'Other/Prefer Not to Say/Missing' ~ 'POC',
     TRUE ~ race_bin
     )
-  ) 
+  )
 ```
 
-## Salary 
+## Salary
 
 ```{r}
-## Salary 
+## Salary
 
 breaks <- c(
-  0, 20000, 24999,  29999, 34999, 39999, 44999, 49999, 54999, 
+  0, 20000, 24999,  29999, 34999, 39999, 44999, 49999, 54999,
   59999, 64999, 69999, 74999, 79999, 84999, 89999, 94999, 99999,
-  104999, 109999, 114999, 119999, 124999, 129999, 134999, 139999, 
+  104999, 109999, 114999, 119999, 124999, 129999, 134999, 139999,
   144999, 149999, 154999, 159999, 164999, 169999, 174999,
   179999, 184999, 189999, 194999, 199999, Inf
 )
@@ -373,23 +373,23 @@ labels <- c(
   "Under $20,000", "$20,000 to $24,999", 	"$25,000 to $29,999", 	
   "$30,000 to $34,999", "$35,000 to $39,999", "$40,000 to $44,999", 	
   "$45,000 to $49,999", "$50,000 to $54,999", "$55,000 to $59,999", 	
-  "$60,000 to $64,999", "$65,000 to $69,999", "$70,000 to $74,999",	
-  "$75,000 to $79,999", "$80,000 to $84,999",	"$85,000 to $89,999",	
-  "$90,000 to $94,999",	"$95,000 to $99,999", "$100,000 to $104,999",	
-  "$105,000 to $109,999",	"$110,000 to $114,999",	"$115,000 to $119,999",	
+  "$60,000 to $64,999", "$65,000 to $69,999", "$70,000 to $74,999",
+  "$75,000 to $79,999", "$80,000 to $84,999",	"$85,000 to $89,999",
+  "$90,000 to $94,999",	"$95,000 to $99,999", "$100,000 to $104,999",
+  "$105,000 to $109,999",	"$110,000 to $114,999",	"$115,000 to $119,999",
   "$120,000 to $124,999",	"$125,000 to $129,999",	"$130,000 to $134,999",
-  "$135,000 to $139,999",	"$140,000 to $144,999",	"$145,000 to $149,999",	
-  "$150,000 to $154,999",	"$155,000 to $159,999",	"$160,000 to $164,999",	
-  "$165,000 to $169,999",	"$170,000 to $174,999",	"$175,000 to $179,999",	
+  "$135,000 to $139,999",	"$140,000 to $144,999",	"$145,000 to $149,999",
+  "$150,000 to $154,999",	"$155,000 to $159,999",	"$160,000 to $164,999",
+  "$165,000 to $169,999",	"$170,000 to $174,999",	"$175,000 to $179,999",
   "$180,000 to $184,999",	"$185,000 to $189,999","$190,000 to $194,999",
   "$195,000 to $199,999", "$200,000+"
 )
 
 df$compensation <- as.numeric(df$compensation)
-df$compensation_bin <- cut(df$compensation, breaks = breaks, labels = labels) 
-df$compensation_bin_numeric <- as.numeric(df$compensation_bin) # help with finding the median 
+df$compensation_bin <- cut(df$compensation, breaks = breaks, labels = labels)
+df$compensation_bin_numeric <- as.numeric(df$compensation_bin) # help with finding the median
 
-# compensation_bin to compensation_bin_numeric crosswalk 
+# compensation_bin to compensation_bin_numeric crosswalk
 compensation_bin_crosswalk <- unique(
   df[c("compensation_bin", "compensation_bin_numeric")]
 )
@@ -400,16 +400,16 @@ compensation_bin_crosswalk <- unique(
 ```{r}
 
 # shorten geo_name by removing the (MSA) label in each row
-# some rows end w a delimiter like "1/", remove those too 
-rpp <- rpp %>% 
+# some rows end w a delimiter like "1/", remove those too
+rpp <- rpp %>%
   mutate(
     geo_name = stringr::str_remove(
       geo_name, "(\\(Metropolitan Statistical Area\\))|\\s.{2}$")
   )
 
-rpp <- geo %>% 
+rpp <- geo %>%
   mutate(cbsa = as.character(cbsa)) %>%
-  left_join(rpp, by = c("cbsa" = "cbsa")) %>% 
+  left_join(rpp, by = c("cbsa" = "cbsa")) %>%
   select(zip, cbsa, geo_name, rpp)
 
 rm(geo)
@@ -417,7 +417,7 @@ rm(geo)
 
 ```{r}
 # zip came in as a list, need to flatten it to a vector
-# see purrr documentation here 
+# see purrr documentation here
 # https://purrr.tidyverse.org/reference/flatten.html#arguments
 
 # some items are a string NULL instead of NA, fix that so that flatten() works
@@ -437,13 +437,13 @@ df <- df %>%
 ```
 
 
-####### Unfinished Code Below ###### 
+####### Unfinished Code Below ######
 
-# Data Validation and Attention Checks 
+# Data Validation and Attention Checks
 
 * Years of experience questions -- is the sum > 30, are all the answers the same number >> write to NA
 * Outliers in Salary, 0 >> change to NA
-* Among professional development Qs, did people only say that they had done PD activities that they had access to in q1? 
+* Among professional development Qs, did people only say that they had done PD activities that they had access to in q1?
 
 ## Missingness
 
@@ -451,37 +451,37 @@ Create variable for the last question that someone answered to see dropoff/ flow
 
 # Write Clean Data To GoogleDrive
 
-First, write the dataframes to a local directory via the `here` package. 
-Make sure your .gitignore is set to ignore the main results df, since it 
-includes PII, but the other data files can be sent to git. 
+First, write the dataframes to a local directory via the `here` package.
+Make sure your .gitignore is set to ignore the main results df, since it
+includes PII, but the other data files can be sent to git.
 
-Since we can't send the results to git, we'll upload to google drive instead. 
+Since we can't send the results to git, we'll upload to google drive instead.
 
 ```{r}
 readr::write_csv(
-  df, 
+  df,
   here::here("data", "survey_responses.csv")
 )
 
 readr::write_csv(
-  compensation_bin_crosswalk, 
+  compensation_bin_crosswalk,
   here::here("data", "compensation_bin_crosswalk.csv")
 )
 
 readr::write_csv(
-  rpp, 
+  rpp,
   here::here("data", "rpp_zip_clean.csv")
 )
 
-# write a cleaned up version of the name helper table 
+# write a cleaned up version of the name helper table
 name_helper <- name_helper %>%
   rename(
-   response_name = sub_response, 
+   response_name = sub_response,
    response_name_short = col_name_clean
   ) %>% select(-col_name_helper)
 
 readr::write_csv(
-  name_helper, 
+  name_helper,
   here::here("data", "col_name_helper.csv")
 )
 ```
@@ -496,4 +496,3 @@ googledrive::drive_upload(
   path = "1urZL8JCFdjFDTARpClQbCtX41NV3TSML"
 )
 ```
-
