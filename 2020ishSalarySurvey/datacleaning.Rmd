@@ -215,10 +215,11 @@ we set `Yes, I increased my compensation` to be `TRUE`. Missing values are NA.
 # Among columns for multi-select responses, turn text to TRUE
 # but ignore freetext columns labeld as "other_specify"
 
-
 multi_cols <- colnames(df)[
   grepl(".resp.", colnames(df), fixed = TRUE) &
-    ! grepl("other_specify", colnames(df), fixed = TRUE)
+    ! grepl("other_specify", colnames(df), fixed = TRUE) &
+    # Skills section should stay named as "Beginner, Advanced, etc" 
+    ! grepl("skills_comfort", colnames(df), fixed = TRUE)
 ]
 
 df <- df %>%

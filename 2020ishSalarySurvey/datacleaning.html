@@ -369,7 +369,7 @@ summary {
 <div id="read-in-data" class="section level1">
 <h1>Read in Data</h1>
 <p>We manually pulled a csv out of Alchemer and stored that data in a Google Sheet, along with some manually created helper tabs for translating column names and coding free text data.</p>
-<pre class="r"><code># currently using interactive/ in browser auth 
+<pre class="r"><code># currently using interactive/ in browser auth
 # whoever is running this code must have access to the gsheet
 url &lt;- &#39;https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M&#39;
 
@@ -400,15 +400,15 @@ df &lt;- googlesheets4::read_sheet(url, sheet = &#39;2/22: Data&#39;)</code></pr
 <pre><code>## New names:
 ## * `` -&gt; ...5</code></pre>
 <pre class="r"><code># reference data
-# real purchasing power by metro statistical area (MSA), downloaded from 
+# real purchasing power by metro statistical area (MSA), downloaded from
 # https://apps.bea.gov/iTable/iTable.cfm?reqid=70&amp;step=30&amp;isuri=1&amp;major_area=5&amp;area=xx&amp;year=2019&amp;tableid=104&amp;category=8101&amp;area_type=0&amp;year_end=-1&amp;classification=non-industry&amp;state=5&amp;statistic=1&amp;yearbegin=-1&amp;unit_of_measure=levels
 
 rpp &lt;- readr::read_csv(
   # first 4 lines are notes, not data, so skip
-  here::here(&quot;data&quot;, &quot;rpp_by_msa_2019.csv&quot;), skip = 4) %&gt;% 
+  here::here(&quot;data&quot;, &quot;rpp_by_msa_2019.csv&quot;), skip = 4) %&gt;%
   clean_names() %&gt;%
   rename(
-    cbsa = geo_fips, 
+    cbsa = geo_fips,
     rpp = x2019
   ) %&gt;%
   # last 3 lines are notes that caused the parsing failure, so drop
@@ -426,9 +426,9 @@ rpp &lt;- readr::read_csv(
 ## 389  -- 3 columns 1 columns &#39;/Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/rpp_by_msa_2019.csv&#39;
 ## 390  -- 3 columns 1 columns &#39;/Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/rpp_by_msa_2019.csv&#39;</code></pre>
 <pre class="r"><code># geographic info for zip to CBSA downloaded from  
-# https://www.huduser.gov/portal/datasets/usps_crosswalk.html#data 
-geo &lt;- readr::read_csv(here::here(&quot;data&quot;, &quot;zip_to_cbsa.csv&quot;))  %&gt;% 
-  clean_names() </code></pre>
+# https://www.huduser.gov/portal/datasets/usps_crosswalk.html#data
+geo &lt;- readr::read_csv(here::here(&quot;data&quot;, &quot;zip_to_cbsa.csv&quot;))  %&gt;%
+  clean_names()</code></pre>
 <pre><code>## Parsed with column specification:
 ## cols(
 ##   ZIP = col_character(),
@@ -454,16 +454,16 @@ name_helper &lt;- questions %&gt;% full_join(
   by = &quot;question_name&quot;
 ) %&gt;% mutate(
   col_name_final = stringr::str_c(
-    snakecase::to_snake_case(question_name_short), 
-    &quot;.resp.&quot;, 
+    snakecase::to_snake_case(question_name_short),
+    &quot;.resp.&quot;,
     snakecase::to_snake_case(col_name_clean)
   )
 ) %&gt;% mutate(
   col_name_final = coalesce(
-    col_name_final, 
+    col_name_final,
     snakecase::to_snake_case(question_name_short)
   )
-) %&gt;% unique() 
+) %&gt;% unique()
 
 # clean up environment
 rm(columns, questions)</code></pre>
@@ -478,26 +478,26 @@ name_helper$question_name[name_helper$question_num == 0]</code></pre>
 ##  [9] &quot;Referer&quot;         &quot;SessionID&quot;       &quot;User Agent&quot;      &quot;Tags&quot;           
 ## [13] &quot;IP Address&quot;      &quot;Longitude&quot;       &quot;Latitude&quot;        &quot;Country&quot;        
 ## [17] &quot;City&quot;            &quot;State/Region&quot;    &quot;Postal&quot;</code></pre>
-<pre class="r"><code># we want to drop everything except the first 4 columns 
+<pre class="r"><code># we want to drop everything except the first 4 columns
 drop_cols &lt;- c(
-  &quot;Contact ID&quot;, &quot;Legacy Comments&quot;, &quot;Comments&quot;, 
-  &quot;Language&quot;, &quot;Referer&quot;,  &quot;SessionID&quot;, 
-  &quot;User Agent&quot;, &quot;Tags&quot;, &quot;IP Address&quot;, &quot;Longitude&quot;, &quot;Latitude&quot;, 
+  &quot;Contact ID&quot;, &quot;Legacy Comments&quot;, &quot;Comments&quot;,
+  &quot;Language&quot;, &quot;Referer&quot;,  &quot;SessionID&quot;,
+  &quot;User Agent&quot;, &quot;Tags&quot;, &quot;IP Address&quot;, &quot;Longitude&quot;, &quot;Latitude&quot;,
   &quot;Country&quot;, &quot;City&quot;, &quot;State/Region&quot;, &quot;Postal&quot;
 )
 
-df &lt;- df %&gt;% 
+df &lt;- df %&gt;%
   select(-all_of(drop_cols))</code></pre>
 </div>
 <div id="clean-duplicated-column-names" class="section level2">
 <h2>Clean Duplicated Column Names</h2>
 <p>Next, we deal with the columns that had duplicated names and were renamed in the import process. Some of these are empty and need to be dropped, others need to be renamed.</p>
-<pre class="r"><code># find columns that were automatically renamed in the import 
+<pre class="r"><code># find columns that were automatically renamed in the import
 renamed &lt;- names(df)[grepl(&quot;....&quot;, names(df), fixed = TRUE)]
 
 # find columns where all values are NA
-empty &lt;- df %&gt;% 
-  select_if(~all(is.na(.))) %&gt;% 
+empty &lt;- df %&gt;%
+  select_if(~all(is.na(.))) %&gt;%
   colnames()
 
 print(union(renamed, empty))</code></pre>
@@ -518,39 +518,39 @@ print(union(renamed, empty))</code></pre>
 ## [15] &quot;Option 2: Where do you want or expect to be working a year from now? Select all that apply.&quot;                                  
 ## [16] &quot;Native Hawaiian or Pacific Islander:What is your race / ethnicity? Please select all that apply.&quot;                             
 ## [17] &quot;Other, prefer to specify:Are you a member of the military or a veteran?&quot;</code></pre>
-<pre class="r"><code># Manually pick which cols to drop 
+<pre class="r"><code># Manually pick which cols to drop
 drop_cols &lt;- c(
   &quot;None of the above:Which of the following benefits are you personally eligible for? Select all that apply....62&quot;,
-  &quot;None of the above:Which of the following items have you personally done in the last year? Please select all that apply....88&quot;, 
+  &quot;None of the above:Which of the following items have you personally done in the last year? Please select all that apply....88&quot;,
   &quot;Option 1: Where do you want or expect to be working a year from now? Select all that apply.&quot;,
   &quot;Option 2: Where do you want or expect to be working a year from now? Select all that apply.&quot;,
   &quot;None of the above:Which of the following items have you personally done in the last year? Please select all that apply....163&quot;,
-  &quot;Other, prefer to specify:What is your race / ethnicity? Please select all that apply....176&quot;, 
+  &quot;Other, prefer to specify:What is your race / ethnicity? Please select all that apply....176&quot;,
   &quot;Prefer not to answer:What is your race / ethnicity? Please select all that apply....178&quot;,
   &quot;Other, prefer to specify  test:What is your race / ethnicity? Please select all that apply....179&quot;,
   &quot;Other, prefer to specify  test:What is your race / ethnicity? Please select all that apply....182&quot;
 )
 
-df &lt;- df %&gt;% 
+df &lt;- df %&gt;%
   select(-all_of(drop_cols))</code></pre>
-<pre class="r"><code># find remaining columns that were automatically renamed in the import 
+<pre class="r"><code># find remaining columns that were automatically renamed in the import
 renamed &lt;- names(df)[grepl(&quot;....&quot;, names(df), fixed = TRUE)]
 
 revert_names &lt;- function(x){
-  
-  # check whether name needs to be fixed 
+
+  # check whether name needs to be fixed
   if(grepl(&quot;....&quot;, x, fixed = TRUE)){
-    
+
     # remove the periods and number that read_sheet inserted
-    vec &lt;- stringr::str_remove(x, &quot;\\.{4}\\d{2,}$&quot;) 
-    
+    vec &lt;- stringr::str_remove(x, &quot;\\.{4}\\d{2,}$&quot;)
+
     # add back the period that was in the original column name
-    vec &lt;- paste0(vec, &quot;.&quot;) 
-    
+    vec &lt;- paste0(vec, &quot;.&quot;)
+
   } else {
     vec &lt;- x
   }
-  
+
   return(vec)
 }
 
@@ -563,28 +563,28 @@ colnames(df) &lt;- purrr::map_chr(
 <div id="recode-column-names-with-values-from-helper-table" class="section level2">
 <h2>Recode Column Names with Values from Helper Table</h2>
 <p>Next, we use the newly created column names as key-value pairs, and substitute the current column names for their more helpful versions.</p>
-<pre class="r"><code># TODO: Updated: Deal with the technical and non technical versions 
+<pre class="r"><code># TODO: Updated: Deal with the technical and non technical versions
 # of the column &quot;None of the above:Which of the following items have you personally done in the last year? Please select all that apply.&quot;      
-# manually rename by position 
+# manually rename by position
 stopifnot(
-  colnames(df)[144] == 
+  colnames(df)[144] ==
     &quot;None of the above:Which of the following items have you personally done in the last year? Please select all that apply.&quot;
 )
 stopifnot(
-  colnames(df)[158] == 
+  colnames(df)[158] ==
     &quot;Other, prefer to specify:What is your race / ethnicity? Please select all that apply.&quot;
 )
 
 df &lt;- df %&gt;%
   rename(
-    &quot;projects_done_technical.resp.none&quot; = 144, 
+    &quot;projects_done_technical.resp.none&quot; = 144,
     &quot;race.resp.other_specify_freetext&quot; = 158
   )
 
 # replace original names with updated versions, matching on old names
-colnames(df) &lt;- coalesce( 
+colnames(df) &lt;- coalesce(
   name_helper$col_name_final[
-    match(names(df), name_helper$col_name_original)], 
+    match(names(df), name_helper$col_name_original)],
   colnames(df))</code></pre>
 </div>
 </div>
@@ -594,15 +594,16 @@ colnames(df) &lt;- coalesce(
 <pre class="r"><code># Among columns for multi-select responses, turn text to TRUE
 # but ignore freetext columns labeld as &quot;other_specify&quot;
 
-
 multi_cols &lt;- colnames(df)[
   grepl(&quot;.resp.&quot;, colnames(df), fixed = TRUE) &amp;
-    ! grepl(&quot;other_specify&quot;, colnames(df), fixed = TRUE)
+    ! grepl(&quot;other_specify&quot;, colnames(df), fixed = TRUE) &amp;
+    # Skills section should stay named as &quot;Beginner, Advanced, etc&quot; 
+    ! grepl(&quot;skills_comfort&quot;, colnames(df), fixed = TRUE)
 ]
 
-df &lt;- df %&gt;% 
+df &lt;- df %&gt;%
   mutate_at(
-    all_of(multi_cols), 
+    all_of(multi_cols),
     ~ifelse(!is.na(.x), TRUE, NA)
   )</code></pre>
 </div>
@@ -611,24 +612,24 @@ df &lt;- df %&gt;%
 <div id="eligible-for-survey" class="section level2">
 <h2>Eligible for Survey</h2>
 <pre class="r"><code>df &lt;- df %&gt;% mutate(
-  eligible = 
+  eligible =
     # must have answered all the questions in the work in politics section
-    # if any are NA, then the response is ineligible 
+    # if any are NA, then the response is ineligible
     ! is.na(work_in_politics) &amp;
     ! is.na(data_40_org) &amp;
     ! is.na(data_40_team) &amp;
     ! is.na(data_40_role) &amp;
-    # must have said they worked in politics 
+    # must have said they worked in politics
     work_in_politics %in% c(&quot;Yes&quot;, &quot;Did but employment ended post-election&quot;) &amp;
     # either org, team, or role must be data focused
     any(
-      data_40_org != &#39;No&#39;, 
+      data_40_org != &#39;No&#39;,
       data_40_team != &#39;No&#39; ,
       data_40_role != &#39;No&#39;
     )
   )
-    
-# Gut Check Logic 
+
+# Gut Check Logic
 
 # most people who completed the survey are eligible
 df %&gt;% tabyl(status, eligible)</code></pre>
@@ -636,7 +637,7 @@ df %&gt;% tabyl(status, eligible)</code></pre>
 ##  Complete    30  624
 ##   Partial   123  104</code></pre>
 <pre class="r"><code># most people got kicked out for not answering the questions
-df %&gt;% filter(eligible == FALSE) %&gt;% 
+df %&gt;% filter(eligible == FALSE) %&gt;%
   tabyl(data_40_org, data_40_team, data_40_role)</code></pre>
 <pre><code>## $No
 ##  data_40_org No Yes
@@ -653,8 +654,8 @@ df %&gt;% filter(eligible == FALSE) %&gt;%
 ##           No  0   0   0
 ##          Yes  0   0   0
 ##         &lt;NA&gt;  0   0 101</code></pre>
-<pre class="r"><code># 85 people got kicked out for saying they didn&#39;t work in politics 
-df %&gt;% filter(eligible == FALSE) %&gt;% 
+<pre class="r"><code># 85 people got kicked out for saying they didn&#39;t work in politics
+df %&gt;% filter(eligible == FALSE) %&gt;%
   tabyl(work_in_politics)</code></pre>
 <pre><code>##                        work_in_politics  n    percent valid_percent
 ##  Did but employment ended post-election 11 0.07189542    0.07482993
@@ -662,7 +663,7 @@ df %&gt;% filter(eligible == FALSE) %&gt;%
 ##                                     Yes 51 0.33333333    0.34693878
 ##                                    &lt;NA&gt;  6 0.03921569            NA</code></pre>
 <pre class="r"><code># potentially some misunderstanding of the question, but not much
-df %&gt;% filter(work_in_politics == &quot;No&quot;) %&gt;% 
+df %&gt;% filter(work_in_politics == &quot;No&quot;) %&gt;%
   tabyl(org_type)</code></pre>
 <pre><code>##                                                                              org_type
 ##                                                              Analytics / Polling firm
@@ -691,16 +692,16 @@ df %&gt;% filter(work_in_politics == &quot;No&quot;) %&gt;%
 <h2>Gender</h2>
 <pre class="r"><code>df &lt;- df %&gt;% mutate(
   gender_bin = case_when(
-    gender == &quot;Cis man&quot; ~ &quot;Cis man&quot;, 
+    gender == &quot;Cis man&quot; ~ &quot;Cis man&quot;,
     gender == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;,
     gender != &quot;Prefer not to answer&quot; |
-      gender != &quot;Cis man&quot; ~ &#39;Non-Cis man&#39;), 
+      gender != &quot;Cis man&quot; ~ &#39;Non-Cis man&#39;),
   gender_cis = case_when(
-    gender %in% c(&quot;Cis man&quot;, &quot;Cis Woman&quot;) ~ &quot;Cisgender&quot;, 
+    gender %in% c(&quot;Cis man&quot;, &quot;Cis Woman&quot;) ~ &quot;Cisgender&quot;,
     gender %in% c(
-      &quot;Different gender identity, prefer to specify&quot;, 
-      &quot;Gender non-binary or non-conforming&quot;, 
-      &quot;Trans man&quot;, &quot;Trans woman&quot;) ~ &quot;Trans or NonBinary&quot;, 
+      &quot;Different gender identity, prefer to specify&quot;,
+      &quot;Gender non-binary or non-conforming&quot;,
+      &quot;Trans man&quot;, &quot;Trans woman&quot;) ~ &quot;Trans or NonBinary&quot;,
     gender == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;
   )
 )</code></pre>
@@ -709,8 +710,8 @@ df %&gt;% filter(work_in_politics == &quot;No&quot;) %&gt;%
 <h2>Sexuality</h2>
 <pre class="r"><code>df &lt;- df %&gt;% mutate(
   sexual_orientation_bin = case_when(
-    sexual_orientation == &quot;Heterosexual/straight&quot; ~ &quot;Heterosexual&quot;, 
-    sexual_orientation == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;, 
+    sexual_orientation == &quot;Heterosexual/straight&quot; ~ &quot;Heterosexual&quot;,
+    sexual_orientation == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;,
     TRUE ~ &quot;Queer&quot;
   )
 )</code></pre>
@@ -722,20 +723,20 @@ labels &lt;- c(&#39;20-24&#39;, &#39;25-29&#39;, &#39;30-34&#39;,
             &#39;35-39&#39;, &#39;40-44&#39;,&#39;45-49&#39;,
             &#39;50-54&#39;, &#39;55-59&#39;, &#39;60+&#39;)
 df$age &lt;- 2020 - as.numeric(df$yob)
-df$age_bin &lt;- cut(df$age, breaks = breaks, labels = labels) </code></pre>
+df$age_bin &lt;- cut(df$age, breaks = breaks, labels = labels)</code></pre>
 </div>
 <div id="race" class="section level2">
 <h2>Race</h2>
-<pre class="r"><code>race_cols &lt;- df %&gt;% 
-  select(starts_with(&quot;race.resp&quot;), 
-         - race.resp.other_specify, 
+<pre class="r"><code>race_cols &lt;- df %&gt;%
+  select(starts_with(&quot;race.resp&quot;),
+         - race.resp.other_specify,
          - race.resp.other_specify_freetext) %&gt;%
   colnames()
 
 df &lt;- df %&gt;%
   rowwise() %&gt;%
   # for each respondent, count the number of races selected
-  mutate(n_resp_selected = sum(c_across(race_cols), na.rm = TRUE)) </code></pre>
+  mutate(n_resp_selected = sum(c_across(race_cols), na.rm = TRUE))</code></pre>
 <pre><code>## Note: Using an external vector in selections is ambiguous.
 ## ℹ Use `all_of(race_cols)` instead of `race_cols` to silence this message.
 ## ℹ See &lt;https://tidyselect.r-lib.org/reference/faq-external-vector.html&gt;.
@@ -743,7 +744,7 @@ df &lt;- df %&gt;%
 <pre class="r"><code>df &lt;- df %&gt;% mutate(
   # if someone has selected multiple races, code as multi-racial
   # if someone selected no races, code as missing/other/prefer not to say
-  # otherwise, code as the 1 race selected 
+  # otherwise, code as the 1 race selected
   race_bin = case_when(
     race.resp.white == TRUE &amp;
       n_resp_selected == 1 ~ &#39;White&#39;,
@@ -753,30 +754,30 @@ df &lt;- df %&gt;%
       n_resp_selected  == 1 ~ &#39;Native American&#39;,
     race.resp.asian == TRUE &amp;
       n_resp_selected  == 1 ~ &#39;Asian or Asian American (including South Asian)&#39;,
-    race.resp.native_pacific == TRUE  &amp; 
+    race.resp.native_pacific == TRUE  &amp;
       n_resp_selected  == 1 ~ &#39;Native Hawaiian or Pacific Islander&#39;,
-    race.resp.latinx == TRUE &amp; 
-      n_resp_selected  == 1 ~ &#39;Hispanic or Latinx&#39;, 
-    race.resp.middle_eastern == TRUE  &amp; 
+    race.resp.latinx == TRUE &amp;
+      n_resp_selected  == 1 ~ &#39;Hispanic or Latinx&#39;,
+    race.resp.middle_eastern == TRUE  &amp;
       n_resp_selected  == 1 ~ &#39;Middle Eastern&#39;,
-    n_resp_selected  &gt; 1 ~ &#39;Multi-Racial&#39;, 
+    n_resp_selected  &gt; 1 ~ &#39;Multi-Racial&#39;,
     n_resp_selected  == 0 ~ &#39;Other/Prefer Not to Say/Missing&#39;
-  ), 
+  ),
   race_bin2 = case_when(
     race_bin != &#39;White&#39; &amp;
-      race_bin !=  &#39;Other/Prefer Not to Say/Missing&#39; ~ &#39;POC&#39;, 
+      race_bin !=  &#39;Other/Prefer Not to Say/Missing&#39; ~ &#39;POC&#39;,
     TRUE ~ race_bin
     )
-  ) </code></pre>
+  )</code></pre>
 </div>
 <div id="salary" class="section level2">
 <h2>Salary</h2>
-<pre class="r"><code>## Salary 
+<pre class="r"><code>## Salary
 
 breaks &lt;- c(
-  0, 20000, 24999,  29999, 34999, 39999, 44999, 49999, 54999, 
+  0, 20000, 24999,  29999, 34999, 39999, 44999, 49999, 54999,
   59999, 64999, 69999, 74999, 79999, 84999, 89999, 94999, 99999,
-  104999, 109999, 114999, 119999, 124999, 129999, 134999, 139999, 
+  104999, 109999, 114999, 119999, 124999, 129999, 134999, 139999,
   144999, 149999, 154999, 159999, 164999, 169999, 174999,
   179999, 184999, 189999, 194999, 199999, Inf
 )
@@ -785,23 +786,23 @@ labels &lt;- c(
   &quot;Under $20,000&quot;, &quot;$20,000 to $24,999&quot;,    &quot;$25,000 to $29,999&quot;,   
   &quot;$30,000 to $34,999&quot;, &quot;$35,000 to $39,999&quot;, &quot;$40,000 to $44,999&quot;,     
   &quot;$45,000 to $49,999&quot;, &quot;$50,000 to $54,999&quot;, &quot;$55,000 to $59,999&quot;,     
-  &quot;$60,000 to $64,999&quot;, &quot;$65,000 to $69,999&quot;, &quot;$70,000 to $74,999&quot;, 
-  &quot;$75,000 to $79,999&quot;, &quot;$80,000 to $84,999&quot;,   &quot;$85,000 to $89,999&quot;,   
-  &quot;$90,000 to $94,999&quot;, &quot;$95,000 to $99,999&quot;, &quot;$100,000 to $104,999&quot;,   
-  &quot;$105,000 to $109,999&quot;,   &quot;$110,000 to $114,999&quot;, &quot;$115,000 to $119,999&quot;, 
+  &quot;$60,000 to $64,999&quot;, &quot;$65,000 to $69,999&quot;, &quot;$70,000 to $74,999&quot;,
+  &quot;$75,000 to $79,999&quot;, &quot;$80,000 to $84,999&quot;,   &quot;$85,000 to $89,999&quot;,
+  &quot;$90,000 to $94,999&quot;, &quot;$95,000 to $99,999&quot;, &quot;$100,000 to $104,999&quot;,
+  &quot;$105,000 to $109,999&quot;,   &quot;$110,000 to $114,999&quot;, &quot;$115,000 to $119,999&quot;,
   &quot;$120,000 to $124,999&quot;,   &quot;$125,000 to $129,999&quot;, &quot;$130,000 to $134,999&quot;,
-  &quot;$135,000 to $139,999&quot;,   &quot;$140,000 to $144,999&quot;, &quot;$145,000 to $149,999&quot;, 
-  &quot;$150,000 to $154,999&quot;,   &quot;$155,000 to $159,999&quot;, &quot;$160,000 to $164,999&quot;, 
-  &quot;$165,000 to $169,999&quot;,   &quot;$170,000 to $174,999&quot;, &quot;$175,000 to $179,999&quot;, 
+  &quot;$135,000 to $139,999&quot;,   &quot;$140,000 to $144,999&quot;, &quot;$145,000 to $149,999&quot;,
+  &quot;$150,000 to $154,999&quot;,   &quot;$155,000 to $159,999&quot;, &quot;$160,000 to $164,999&quot;,
+  &quot;$165,000 to $169,999&quot;,   &quot;$170,000 to $174,999&quot;, &quot;$175,000 to $179,999&quot;,
   &quot;$180,000 to $184,999&quot;,   &quot;$185,000 to $189,999&quot;,&quot;$190,000 to $194,999&quot;,
   &quot;$195,000 to $199,999&quot;, &quot;$200,000+&quot;
 )
 
 df$compensation &lt;- as.numeric(df$compensation)
-df$compensation_bin &lt;- cut(df$compensation, breaks = breaks, labels = labels) 
-df$compensation_bin_numeric &lt;- as.numeric(df$compensation_bin) # help with finding the median 
+df$compensation_bin &lt;- cut(df$compensation, breaks = breaks, labels = labels)
+df$compensation_bin_numeric &lt;- as.numeric(df$compensation_bin) # help with finding the median
 
-# compensation_bin to compensation_bin_numeric crosswalk 
+# compensation_bin to compensation_bin_numeric crosswalk
 compensation_bin_crosswalk &lt;- unique(
   df[c(&quot;compensation_bin&quot;, &quot;compensation_bin_numeric&quot;)]
 )</code></pre>
@@ -809,21 +810,21 @@ compensation_bin_crosswalk &lt;- unique(
 <div id="zip-code-to-census-area" class="section level2">
 <h2>Zip Code to Census Area</h2>
 <pre class="r"><code># shorten geo_name by removing the (MSA) label in each row
-# some rows end w a delimiter like &quot;1/&quot;, remove those too 
-rpp &lt;- rpp %&gt;% 
+# some rows end w a delimiter like &quot;1/&quot;, remove those too
+rpp &lt;- rpp %&gt;%
   mutate(
     geo_name = stringr::str_remove(
       geo_name, &quot;(\\(Metropolitan Statistical Area\\))|\\s.{2}$&quot;)
   )
 
-rpp &lt;- geo %&gt;% 
+rpp &lt;- geo %&gt;%
   mutate(cbsa = as.character(cbsa)) %&gt;%
-  left_join(rpp, by = c(&quot;cbsa&quot; = &quot;cbsa&quot;)) %&gt;% 
+  left_join(rpp, by = c(&quot;cbsa&quot; = &quot;cbsa&quot;)) %&gt;%
   select(zip, cbsa, geo_name, rpp)
 
 rm(geo)</code></pre>
 <pre class="r"><code># zip came in as a list, need to flatten it to a vector
-# see purrr documentation here 
+# see purrr documentation here
 # https://purrr.tidyverse.org/reference/flatten.html#arguments
 
 # some items are a string NULL instead of NA, fix that so that flatten() works
@@ -860,29 +861,29 @@ df &lt;- df %&gt;%
 <p>First, write the dataframes to a local directory via the <code>here</code> package. Make sure your .gitignore is set to ignore the main results df, since it includes PII, but the other data files can be sent to git.</p>
 <p>Since we can’t send the results to git, we’ll upload to google drive instead.</p>
 <pre class="r"><code>readr::write_csv(
-  df, 
+  df,
   here::here(&quot;data&quot;, &quot;survey_responses.csv&quot;)
 )
 
 readr::write_csv(
-  compensation_bin_crosswalk, 
+  compensation_bin_crosswalk,
   here::here(&quot;data&quot;, &quot;compensation_bin_crosswalk.csv&quot;)
 )
 
 readr::write_csv(
-  rpp, 
+  rpp,
   here::here(&quot;data&quot;, &quot;rpp_zip_clean.csv&quot;)
 )
 
-# write a cleaned up version of the name helper table 
+# write a cleaned up version of the name helper table
 name_helper &lt;- name_helper %&gt;%
   rename(
-   response_name = sub_response, 
+   response_name = sub_response,
    response_name_short = col_name_clean
   ) %&gt;% select(-col_name_helper)
 
 readr::write_csv(
-  name_helper, 
+  name_helper,
   here::here(&quot;data&quot;, &quot;col_name_helper.csv&quot;)
 )</code></pre>
 <pre class="r"><code># upload results file to google drive, since we can&#39;t put it in git
@@ -901,7 +902,7 @@ googledrive::drive_upload(
 <pre><code>## Local file:
 ##   * /Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/survey_responses.csv
 ## uploaded into Drive file:
-##   * 1urZL8JCFdjFDTARpClQbCtX41NV3TSML: 1ohlqo6xSkAN9f1Nu0Q-ysNTGZJKhRm0P
+##   * 1urZL8JCFdjFDTARpClQbCtX41NV3TSML: 1MTsU3dWBrxXMMrOFrgAQLFgGJW5gbfnF
 ## with MIME type:
 ##   * text/csv</code></pre>
 </div>
