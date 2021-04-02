@@ -55,7 +55,8 @@ library(tidyr)
 library(viridis)
 library(forcats)
 library(ggridges)
-library(kableExtra)
+library(pollster)
+#library(kableExtra) 
 ```
 
 
@@ -79,6 +80,8 @@ source("functions/tt_function.R")
 source("functions/median_hist.R")
 source("functions/mult_resp.R")
 source("functions/salary_cross.R")
+source("functions/cat_cross.R")
+source("functions/mult_resp_cross.R")
 ```
 
 ```{r, message = FALSE, echo = FALSE }
@@ -119,6 +122,11 @@ df$years_worked_political_data[!is.na(df$years_worked_data) &
 df$years_worked_political[!is.na(df$years_worked_data) & 
                        df$years_worked_political >= 35
                        ] <- NA 
+
+
+# TO DO: check if this makes sense 
+# remove people who didnt complete the survey
+df <- df %>% filter(status == "Complete")
 
 ```
 
@@ -275,7 +283,10 @@ median_hist(df$age,
             x_label = "Age", 
             med_label = "The median age is", 
             med_label_x_cord = median(df$age, na.rm = TRUE) + 7,
-            med_label_y_cord = 50)
+            med_label_y_cord = 50, 
+            color_hist = "#440154FF"
+            )
+# + geom_histogram(fill = c("red"))
 ```
 
 
@@ -369,7 +380,8 @@ median_hist(
   x_label = "Years in Politics & Data", 
   med_label = "The median years of experience is", 
   med_label_x_cord = median(df$years_worked_political_data, na.rm = TRUE) + 20,
-  med_label_y_cord = 50)
+  med_label_y_cord = 50, 
+  color_hist = "#932667FF")
 
 
 ```
@@ -383,7 +395,8 @@ median_hist(
   x_label = "Years in Politics But Not Data", 
   med_label = "The median years of experience is",
   med_label_x_cord = median(df$years_worked_political, na.rm = TRUE) + 20,
-  med_label_y_cord = 50
+  med_label_y_cord = 50, 
+  color_hist = "#DD513AFF"
   )
             
 ```
@@ -396,7 +409,8 @@ median_hist(df$years_worked_data,
             x_label = "Years in Data But Not Politics", 
             med_label = "The median years of experience is",
             med_label_x_cord = median(df$years_worked_data, na.rm = TRUE) + 10,
-            med_label_y_cord = 50
+            med_label_y_cord = 50, 
+            color_hist = "#FCA50AFF"
   )
 ```
 
@@ -416,7 +430,8 @@ median_hist(
   x_label = "Total Years", 
   med_label = "The median years of experience is", 
   med_label_x_cord = median(total_work_experience$sum, na.rm = TRUE) + 17,
-  med_label_y_cord = 50
+  med_label_y_cord = 50, 
+  color_hist = "#BB3754FF"
   )
 ```
 
@@ -464,7 +479,7 @@ plot_data <- tmp2 %>%
   mutate(pct = n /sum(n)) %>% 
   # create label for bar plot 
   mutate(bar_label =  paste0(
-     sprintf("%.1f%%", round(100 * pct)), " (N = ", n, ")")) %>%
+     sprintf("%.1f%%", round(100 * pct)), " (n = ", n, ")")) %>%
   # for the "no" values make the bar_label empty string 
   mutate(bar_label= ifelse(value == "No", " ", bar_label))%>%
   # rename values in variable column so it easier to plot 
@@ -531,23 +546,6 @@ County1 Group1  2019    597 513 5342    3220    11691
 ```
 
 
-```{r, message = FALSE, echo = FALSE }
-tt(df$data_40_org)
-```
-
-* Is the primary focus (>40% of resources) of your **team** data, analytics, or technology?
-
-```{r, message = FALSE, echo = FALSE }
-tt(df$data_40_team)
-```
-
-* Is the primary focus (>40% of time) of your **role** data, analytics or technology?
-```{r, message = FALSE, echo = FALSE }
-tt(df$data_40_role)
-```
-
-
-
 # Job Characteristics
 ## Organization Type 
 **How would you describe the organization?**
@@ -593,36 +591,59 @@ tt(df$num_staffers, order_prop = F,
 ```
 
 ### By Gender 
-TODO: Do we remove people who didnt answer the gender question
-error message : Vectorizing 'formattable' elements may not preserve their attributes
+TODO: clean-up output
 
 ```{r, message = FALSE, echo = FALSE }
-# by_demo <- df %>%
-#   select(num_staffers, gender_bin) %>%
-#   filter(!is.na(num_staffers), !is.na(gender_bin)) %>%
-#   # group by variable
-#   group_by(num_staffers, gender_bin) %>%
-#   # get raw counts
-#   summarise(unweighted_n = n()) %>%
-#   #ungroup() %>%
-#   tidyr::complete(fill = list(unweighted_n = 0)) %>%
-#   # create probabilities within each response x demographic pair
-#   mutate(unweighted_prop = unweighted_n/sum(unweighted_n)) %>%
-#   mutate(unweighted_prop = formattable::percent(unweighted_prop, 0),
-#            unweighted_n = formattable::digits(unweighted_n, 0))
-# 
-# overall <- tt(df$num_staffers, raw_df = T) %>%
-#   mutate(gender = "All") %>%
-#   select(num_staffers = variable,  gender, unweighted_n, unweighted_prop)
-# 
-# plot_df_overall <- overall %>%
-#   select(num_staffers)
-# 
-# 
-# dat <- overall %>% gather( unweighted_n,  unweighted_prop, -num_staffers)
-# 
-# pivot_wider(overall, gender, unweighted_n ,unweighted_prop, fill = 0)
-# 
+# create a df 
+all <- df %>%
+  select(num_staffers, gender_bin) %>%
+  filter(!is.na(num_staffers), !is.na(gender_bin)) %>%
+  mutate(gender_bin = "All")
+
+by_demo <- df %>%
+  select(num_staffers, gender_bin) %>%
+  filter(!is.na(num_staffers), !is.na(gender_bin)) %>%
+  bind_rows(all)  %>% 
+  # create a weight variable with all respondents have the same weight, so we can use the crossstab function, which requires a weight 
+  mutate(wgt = 1) %>% 
+  pollster::crosstab(num_staffers,
+           gender_bin,
+           weight = wgt, 
+           pct_type = "column", 
+           format = "wide") 
+by_demo
+
+rm(by_demo, all)
+#%>% 
+  # add n-size to column name 
+ # rename_with(.fn = ~ paste0(names(by_demo), "\n(n=", by_demo[which(num_staffers == "n"),], ")")) 
+# %>% 
+#   formattable::formattable(list(
+#     `All\n(n=610)` = formattable::proportion_bar(),
+#     `Cis man\n(n=259)` = formattable::proportion_bar()),
+#     align = c('l', 'r', 'r'))
+  
+  # mutate(unweighted_prop = formattable::percent(unweighted_prop, 0)),
+  #          unweighted_n = formattable::digits(unweighted_n, 0))
+
+  
+ # filter( ! str_detect(num_staffers, "n") )
+
+#%>% 
+
+
+# %>% 
+#   unite(test, y, m, d, sep = "-")
+
+# %>% 
+#  rename_with( ~ paste() tolower(gsub(".", "_", .x, fixed = TRUE))) %>%
+#  rename_with(.fn = ~ paste0(.x, "(n = ", n, ")"))
+
+
+  # rename()
+  #  mutate(unweighted_prop = formattable::percent(unweighted_prop, 0),
+  #          unweighted_n = formattable::digits(unweighted_n, 0))
+
 # 
 #  df %>%
 #       rename(' ' = variable,
@@ -637,7 +658,84 @@ error message : Vectorizing 'formattable' elements may not preserve their attrib
 
 
 ### By Race 
-TODO 
+```{r}
+all <- df %>%
+  select(num_staffers, race_bin) %>%
+  filter(!is.na(num_staffers), !is.na(race_bin)) %>%
+  mutate(race_bin = "All")
+
+by_demo <- df %>%
+  select(num_staffers, race_bin) %>%
+  filter(!is.na(num_staffers), !is.na(race_bin)) %>%
+  bind_rows(all)  %>% 
+  # create a weight variable with all respondents have the same weight, so we can use the crossstab function, which requires a weight 
+  mutate(wgt = 1) %>% 
+  pollster::crosstab(num_staffers,
+           race_bin,
+           weight = wgt, 
+           pct_type = "column", 
+           format = "wide") 
+by_demo
+
+rm(by_demo, all)
+
+```
+
+### By Race (Binned)
+```{r}
+all <- df %>%
+  select(num_staffers, race_bin2) %>%
+  filter(!is.na(num_staffers), !is.na(race_bin2)) %>%
+  mutate(race_bin2 = "All")
+
+by_demo <- df %>%
+  select(num_staffers, race_bin2) %>%
+  filter(!is.na(num_staffers), !is.na(race_bin2)) %>%
+  bind_rows(all)  %>% 
+  # create a weight variable with all respondents have the same weight, so we can use the crossstab function, which requires a weight 
+  mutate(wgt = 1) %>% 
+  pollster::crosstab(num_staffers,
+           race_bin2,
+           weight = wgt, 
+           pct_type = "column", 
+           format = "wide") 
+by_demo
+
+rm(by_demo, all)
+
+```
+
+### By Gender x Race (Binned)
+```{r}
+all <- df %>%
+  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>%
+    filter(!is.na(num_staffers),
+           !is.na(gender_race),
+           gender_bin != "Prefer not to answer",
+           race_bin2 != "Other/Prefer Not to Say/Missing" ) %>%
+  select(num_staffers, gender_race) %>% 
+  mutate(gender_race = "All")
+
+by_demo <- df %>%
+  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>%
+   filter(!is.na(num_staffers),
+           !is.na(gender_race),
+           gender_bin != "Prefer not to answer",
+           race_bin2 != "Other/Prefer Not to Say/Missing" ) %>%
+  select(num_staffers, gender_race) %>%
+  bind_rows(all)%>% 
+  # create a weight variable with all respondents have the same weight, so we can use the crossstab function, which requires a weight 
+  mutate(wgt = 1) %>% 
+  pollster::crosstab(num_staffers,
+           gender_race,
+           weight = wgt, 
+           pct_type = "column", 
+           format = "wide") 
+by_demo
+
+rm(by_demo, all)
+```
+
 
 ## Time Writing Code {.tabset}
 **What percentage of your time do you spend directly conducting analysis or writing code - as opposed to other work such as communicating with external partners or managing staff?** 
@@ -733,6 +831,7 @@ ggplot(tmp, aes(x = perc_time_coding * 100,
 # Skills + Tools 
 
 How comfortable are you with the following skills and tools?
+https://stackoverflow.com/questions/43520318/how-to-use-percentage-as-label-in-stacked-bar-plot 
 
 * Never used this before: Maybe you've heard of this tool, but you've never used it directly in or outside of work
 * Introductory: You have maybe read about it or completed a tutorial, but you haven't used this in a major project
@@ -742,8 +841,7 @@ How comfortable are you with the following skills and tools?
 
 ## Skills + Tools {.tabset}
 
-### Skills + Tools
-
+### Tools 
 #### Skill Level 
 This graph displays the full distribution of responses to skill level. Responses are ordered by the proportion of respondents who rate themselves as having intermediate or advanced skills.
 
@@ -812,7 +910,7 @@ mult_resp(df, "skills_learning_method", order_prop = T)
 ```
 
 
-## Tasks Done {.tabset}
+## Skills {.tabset}
 **Which of the following items have you personally done in the last year? Please select all that apply.**
 
 ### Technical 
@@ -866,40 +964,15 @@ mult_resp(tmp, "projects_done_management", order_prop = T)
 
 ```{r, message = FALSE, echo = FALSE }
 df1 <- df %>%
-  mutate( variable = "All") %>%
-  select( variable, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(variable), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
+  mutate( variable = "All") 
 
-srg_table <- df1  %>%
-group_by(variable) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(variable, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename(' ' = variable,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
+salary_cross(x = df1, 
+             variable = variable,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "mean") 
 
-srg_table
-
-
+rm(df1)
 ```
 
 
@@ -920,37 +993,142 @@ mult_resp(df, "benefits.resp", order_prop = T)
 
 ## Negotiation {.tabset}
 
+### Try Negotiate {.tabset}
 **During your last job offer or performance review, did you try to negotiate your salary?**
-#### Overall 
-```{r, message = FALSE, echo = FALSE }
-tt(df$negotiate_yesno)
-```
-
-#### By Gender 
-TODO
-
-#### By Race
-TODO
-
-**Was your negotiation successful? Please select all that apply.**
 
 #### Overall 
 ```{r, message = FALSE, echo = FALSE }
-mult_resp(df, "negotiation_result")
+tt(df$negotiate_yesno, 
+   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"),
+   last_ord = "Missing")
 ```
 
 #### By Gender 
-TODO
+
+```{r, message = FALSE, echo = FALSE }
+cat_cross(x = x, 
+  question = negotiate_yesno, 
+  cross_var = gender_bin, 
+  order_by = "levels", 
+  lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
+  last_ord = NULL
+            ) %>%
+  # add some nice formatting 
+      rename(' ' = question) %>%
+      formattable::formattable(list(
+        `All\n(n = 597)` = formattable::proportion_bar(), 
+        `Cis man\n(n = 256)` = formattable::proportion_bar(), 
+        `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
+        align = c('l', 'r', 'r', 'r'))
+```
+
+
+
+#### By Race (Binned)
+```{r}
+cat_cross(x = x, 
+  question = negotiate_yesno, 
+  cross_var = race_bin2, 
+  order_by = "levels", 
+  lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
+  last_ord = NULL
+            ) %>%
+  # add some nice formatting 
+      rename(' ' = question) %>%
+      formattable::formattable(list(
+        `All\n(n = 597)` = formattable::proportion_bar(), 
+        `POC\n(n = 210)` = formattable::proportion_bar(), 
+        `White\n(n = 387)` = formattable::proportion_bar()), 
+        align = c('l', 'r', 'r', 'r', 'r'))
+
+```
+
+#### By Gender x Race (Binned)
+
+```{r, message = FALSE, echo = FALSE }
+# do some data munging before entering df into function argument
+x <- df %>%
+  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>%
+    filter(!is.na(negotiate_yesno),
+           !is.na(gender_race),
+           gender_bin != "Prefer not to answer",
+           race_bin2 != "Other/Prefer Not to Say/Missing" )
+
+cat_cross(x = x, 
+  question = negotiate_yesno, 
+  cross_var = gender_race, 
+  order_by = "levels", 
+  lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
+  last_ord = NULL
+            ) %>%
+  # add some nice formatting 
+      rename(' ' = question) %>%
+      formattable::formattable(list(
+        `All\n(n = 597)` = formattable::proportion_bar(), 
+        `POC | Cis man\n(n = 83)` = formattable::proportion_bar(), 
+        `POC | Non-Cis man\n(n = 127)` = formattable::proportion_bar(), 
+        `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
+        `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
+        align = c('l', 'r', 'r', 'r', 'r', 'r'))
+
+```
+
+
+### Negotiation Successful {.tabset}
+**Was your negotiation successful? Please select all that apply.** [only asked to respondents who attempted a negotiation]
+
+#### Overall 
+```{r, message = FALSE, echo = FALSE }
+
+mult_resp(df %>% filter(negotiate_yesno =="Yes"),
+          "negotiation_result")
+```
+
+
+#### By Gender 
+
+```{r, message = FALSE, echo = FALSE }
+mult_resp_cross(
+  x = df %>% # remove people who didn't answer yes to the previous question
+  filter(negotiate_yesno =="Yes"),
+  question_prefix = "negotiation_result", 
+  cross_var = gender_bin
+  )  %>%
+  # add some nice formatting 
+      rename(' ' = var) %>%
+      formattable::formattable(list(
+        `All\n(n = 219)` = formattable::proportion_bar(), 
+        `Cis man\n(n = 92)` = formattable::proportion_bar(), 
+        `Non-Cis man\n(n = 124)` = formattable::proportion_bar(), 
+        `Prefer not to answer\n(n = 3)` = formattable::proportion_bar()),
+        align = c('l', 'r', 'r', 'r', 'r'))
+```
 
 #### By Race
-TODO
+```{r, message = FALSE, echo = FALSE }
+mult_resp_cross(
+  x = df %>% # remove people who didn't answer yes to the previous question
+  filter(negotiate_yesno =="Yes"),
+  question_prefix = "negotiation_result", 
+  cross_var = race_bin2
+  )  %>%
+  # add some nice formatting 
+      rename(' ' = var) %>%
+      formattable::formattable(list(
+        `All\n(n = 219)` = formattable::proportion_bar(), 
+        `Other/Prefer Not to Say/Missing\n(n = 3)` = formattable::proportion_bar(), 
+        `POC\n(n = 83)` = formattable::proportion_bar(), 
+        `White\n(n = 133)` = formattable::proportion_bar()),
+        align = c('l', 'r', 'r', 'r', 'r'))
+```
+
 
 ## Professional Development {.tabset}
 
 ### Opportunity
 **Does your employer offer any career development opportunities?**
 ```{r, message = FALSE, echo = FALSE }
-tt(df$prof_dev_yesno, last_ord = c('Not sure', 'Missing'), order_prop = T)
+tt(df$prof_dev_yesno)
 ```
 
 
@@ -983,9 +1161,8 @@ salary_cross(x = df,
              variable = gender,
              salary = compensation, 
              salary_bin = compensation_bin, 
-           #  salary_bin_numeric = compensation_bin_numeric,
              order_by = "levels",
-           lvls = c("Different gender identity, prefer to specify",
+             lvls = c("Different gender identity, prefer to specify",
                       "Cis woman",
                       "Trans woman",
                       "Trans man",
@@ -1033,39 +1210,14 @@ ggplot(df2, aes(x = totalyears, y = salary_total, color = variable)) +
 ### Race / Ethnicity
 Universe: Had to answer the demographic and salary questions. 
 ```{r, message = FALSE, echo = FALSE }
-df1 <- df %>%
-  select(race_bin, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(race_bin), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
 
-srg_table <- df1  %>%
-group_by(race_bin) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(race_bin, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = race_bin,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
-
-srg_table
-
+salary_cross(x = df, 
+             variable = race_bin,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "mean", # mean, levels, alpha
+             last_ord = c("Other/Prefer Not to Say/Missing")
+             ) 
 ```
 
 Graph Universe: Had to answer the demographic, salary, years of experience questions. Remove people who responded 'Other/Prefer Not to Say/Missing'
@@ -1110,38 +1262,21 @@ Crosstab Universe: Had to answer the demographic and salary questions.
 ```{r, message = FALSE, echo = FALSE }
 
 df1 <- df %>% 
-  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>% 
-  select(gender_race, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(gender_race), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
+  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) 
 
-srg_table <- df1  %>%
-group_by(gender_race) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(gender_race, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = gender_race,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
 
-srg_table
+salary_cross(x = df1, 
+             variable = gender_race,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "mean", # mean, levels, alpha
+             last_ord = c("Other/Prefer Not to Say/Missing")
+             ) 
+
+
+rm(df1)
+
+
 
 ```
 
@@ -1149,38 +1284,15 @@ srg_table
 ### Age
 Universe: Had to answer the demographic and salary questions. 
 ```{r, message = FALSE, echo = FALSE }
-df1 <- df %>%
-  select(age_bin, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(age_bin), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
 
-srg_table <- df1  %>%
-group_by(age_bin) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(age_bin, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = age_bin,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
+salary_cross(x = df, 
+             variable = age_bin,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "alpha", # mean, levels, alpha
+             last_ord = c("Other/Prefer Not to Say/Missing")
+             ) 
 
-srg_table
 
 ```
 
@@ -1189,113 +1301,53 @@ srg_table
 ### Sexuality 
 Universe: Had to answer the demographic and salary questions. 
 ```{r, message = FALSE, echo = FALSE }
-df1 <- df %>%
-  select(sexual_orientation, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(sexual_orientation), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
 
-srg_table <- df1  %>%
-group_by(sexual_orientation) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(sexual_orientation, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = sexual_orientation,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
+salary_cross(x = df, 
+             variable = sexual_orientation,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "mean", # mean, levels, alpha
+             last_ord = c("Other/Prefer Not to Say/Missing")
+             ) 
 
-srg_table
 ```
 
 
 ### Disability 
 Universe: Had to answer the demographic and salary questions. 
 ```{r, message = FALSE, echo = FALSE }
-df1 <- df %>%
-  select(disabled, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(disabled), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
+salary_cross(x = df, 
+             variable = disabled,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "levels", # mean, levels, alpha
+             lvls = c("Yes, I have or previously had a disability", 
+                      "No, I don't have a disability", "Other"),
+             last_ord = c("Prefer not to answer", "Missing")
+             ) 
 
-srg_table <- df1  %>%
-group_by(disabled) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(disabled, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = disabled,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
-
-srg_table
 ```
 
 ## Education 
 Universe: Had to answer the demographic and salary questions. 
 ```{r, message = FALSE, echo = FALSE }
-df1 <- df %>%
-  select(education_level, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(education_level), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
 
-srg_table <- df1  %>%
-group_by(education_level) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(education_level, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = education_level,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
+salary_cross(x = df, 
+             variable = education_level,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "levels", # mean, levels, alpha
+              lvls = c("High School Diploma or GED", 
+                       "Associate's Degree", 
+                       "Bachelor’s Degree", 
+                       "Post-bachelor’s Work, no Higher Degree", 
+                       "Master’s or Professional Degree (MA, MPP, JD, etc.)", 
+                       "Doctoral Degree (PhD)", 
+                       "Other"), 
+    last_ord = c("Prefer not to answer", "Missing")
+             ) 
 
-srg_table
+
 ```
 
 ## Work Experience 
@@ -1381,76 +1433,38 @@ salary_cross(x = df,
 Universe: Had to answer the seniority and salary questions. 
 
 ```{r, message = FALSE, echo = FALSE }
-df1 <- df %>%
-  select(seniority_level, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(seniority_level), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
 
-srg_table <- df1  %>%
-group_by(seniority_level) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(seniority_level, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = seniority_level,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
 
-srg_table
+salary_cross(x = df, 
+             variable = seniority_level,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "levels", # mean, levels, alpha
+              lvls = c("Entry-Level",
+                         "Mid-Level",
+                         "Senior-Level, but not Department Head",
+                         "Department Head",
+                         "Organization Head, President or C-Level", 
+                         "Other",
+                         "Freelance"))
+
 ```
 
 
 ### Management 
 Universe: Had to answer the management and salary questions. 
 ```{r, message = FALSE, echo = FALSE }
-df1 <- df %>%
-  select(num_staffers, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(num_staffers), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
 
-srg_table <- df1  %>%
-group_by(num_staffers) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(num_staffers, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = num_staffers,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
-
-srg_table
+salary_cross(x = df, 
+             variable = num_staffers,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "levels", # mean, levels, alpha
+             lvls = c("0 staffers",
+                      "1-4 staffers", 
+                      "5-9 staffers",
+                      "10-14 staffers", 
+                      "More than 15 staffers"))
 ```
 
 
@@ -1458,39 +1472,51 @@ srg_table
 Universe: Had to answer the primary job function and salary questions. 
 
 ```{r, message = FALSE, echo = FALSE }
-df1 <- df %>%
-  select(job_team_function, compensation, compensation_bin, compensation_bin_numeric) %>%
-  # remove anyone that is missing gender or salary data 
-   filter(!is.na(job_team_function), !is.na(compensation), !is.na(compensation_bin)) %>%
-  # order df, so that smallest salaries are at the top 
-  arrange((compensation))
 
-srg_table <- df1  %>%
-group_by(job_team_function) %>%
-summarise(
-  mean = mean(compensation),
-  median_numeric = round(median(compensation_bin_numeric), 0),
-  n = n()
-  ) %>% 
-  ## add in the bin range associated with the median value 
-  left_join(
-    compensation_bin_crosswalk, 
-    by = c("median_numeric" = "compensation_bin_numeric")
-    ) %>% 
-  # select only the necessary columns 
-  select(job_team_function, n, mean, median = compensation_bin) %>%
-  # clean-up output
-      rename('Variable' = job_team_function,
-             'N' = n, 
-             'Mean' = mean, 
-             'Median' = median) %>%
-      formattable::formattable(
-        list(N = formattable::proportion_bar()), 
-       # Mean = formattable::currency(Mean),
-        align = c('l', 'r', 'r', 'r'))
+salary_cross(x = df, 
+             variable = job_team_function,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "mean") 
 
-srg_table
+
 ```
+
+### Time Writing Code 
+```{r}
+## creates chart
+ggplot(df, aes(x = perc_time_coding * 100, y = compensation)) +
+  geom_jitter(stat = "identity", width = 2, height = 2) +
+  geom_smooth(method = "loess") +
+  theme_light()+
+  xlab("Percent of Time Writing Code")+
+  ylab("Salary") 
+```
+
+```{r}
+salary_cross(x = df, 
+             variable = perc_time_coding,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             order_by = "alpha") 
+
+```
+
+#### Take into account Managing 
+```{r}
+## creates chart
+ggplot(df, aes(x = perc_time_coding * 100, y = compensation)) +
+  geom_jitter(stat = "identity", width = 2, height = 2) +
+  geom_smooth(method = "loess") +
+  theme_light()+
+  xlab("Percent of Time Writing Code")+
+  ylab("Salary") + 
+  facet_wrap(~ num_staffers) 
+```
+
+
+## Tools + Skills {.tabset}
+Learn (on the job etc) x salary medians? 
 
 
 # Career Plans {.tabset}

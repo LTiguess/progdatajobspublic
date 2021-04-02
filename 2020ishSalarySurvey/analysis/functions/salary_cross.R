@@ -83,9 +83,10 @@ clean_table <- cross_table %>%
          'Median' = median) %>%
   formattable::formattable(
     list(N = formattable::proportion_bar()),
-    align = c('l', 'r', 'r', 'r'))  %>% 
-  kbl() %>%
-  kable_minimal()
+    align = c('l', 'r', 'r', 'r'))  
+# %>% 
+#   kbl() %>%
+#   kable_minimal()
 
 return(clean_table)
 
