@@ -12,8 +12,9 @@ cat_cross <- function(x, question, cross_var,
                       last_ord = NULL){
   
   # create a df that subsets to the right columns 
-  df <- x %>% 
-    select({{question}}, {{cross_var}}) %>% 
+  df <- data.frame(x) %>%
+    select({{question}},
+           {{cross_var}}) %>% 
     filter(!is.na({{question}}),
            !is.na({{cross_var}}))  %>% 
     rename(question = {{question}},
