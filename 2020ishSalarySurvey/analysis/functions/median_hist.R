@@ -1,12 +1,12 @@
 # Creates a historgram and plots (roundest to the nearest whole number) median
 # removes missing values
 
-median_hist <- function(x, x_label, med_label, med_label_x_cord, med_label_y_cord){
+median_hist <- function(x, x_label, med_label, med_label_x_cord, med_label_y_cord, color_hist){
   ggplot(
     as.data.frame(x[!is.na(x)]),
     aes(
       x = x[!is.na(x)])) +
-    geom_histogram(binwidth = 1) +
+    geom_histogram(binwidth = 1, fill = c(color_hist)) +
     geom_vline(xintercept = 
                  median(
                    x[!is.na(x)]),
@@ -20,6 +20,7 @@ median_hist <- function(x, x_label, med_label, med_label_x_cord, med_label_y_cor
              y = med_label_y_cord
              ) +
     xlab(x_label) +
-    ylab("Count") + theme_bw()
+    ylab("Count") +
+    theme_bw() 
 }
 

@@ -2,7 +2,7 @@
 salary_cross <- function(x, variable, salary,
                          salary_bin, 
                       #   salary_bin_numeric,
-                         order_by, # mean, levels, alpha
+                         order_by, # N, levels, alpha
                          lvls = NULL,
                          last_ord = NULL
                          ){
@@ -13,7 +13,7 @@ salary_cross <- function(x, variable, salary,
   
 # salary_bin_numeric = value of bin when you do as.numeric(df$salary_bin)
   
-# order_by = either by mean (decending), prespecifed levels, or alphabetical (ascending)
+# order_by = either by N (decending), prespecifed levels, or alphabetical (ascending)
 # lvls = level order in x (if you want it ordered). needs to be character vector 
 # last_ord = whatever you order by, the inputs here are put in the bottom of the ordering
 
@@ -46,11 +46,11 @@ cross_table <- df  %>%
 
 
 # Order by output by mean, prespecified order, by alphabetic order 
-if(order_by == "mean"){
+if(order_by == "n"){
   # order by mean
   cross_table <- cross_table %>% 
     rename(variable = {{variable}}) %>% 
-    arrange(desc(mean))
+    arrange(desc(n))
 } else if (order_by == "levels") {
    # order by prespecified levels
   cross_table <- cross_table %>%
@@ -64,7 +64,7 @@ if(order_by == "mean"){
       rename(variable = {{variable}}) %>%
       arrange(variable) # asc order
   } else {
-    stop("argument 'order_by' value must either be 'mean', 'levels', or 'alpha'")
+    stop("argument 'order_by' value must either be 'n', 'levels', or 'alpha'")
   }
 
 
@@ -83,9 +83,10 @@ clean_table <- cross_table %>%
          'Median' = median) %>%
   formattable::formattable(
     list(N = formattable::proportion_bar()),
-    align = c('l', 'r', 'r', 'r'))  %>% 
-  kbl() %>%
-  kable_minimal()
+    align = c('l', 'r', 'r', 'r'))  
+# %>% 
+#   kbl() %>%
+#   kable_minimal()
 
 return(clean_table)
 
