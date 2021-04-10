@@ -332,6 +332,10 @@ df <- df %>% mutate(
   # if someone selected no races, code as missing/other/prefer not to say
   # otherwise, code as the 1 race selected
   race_bin = case_when(
+    n_resp_selected  > 1 |
+    race.resp.other_specify_freetext == "Mixed, unknown origin" |
+    race.resp.other_specify_freetext == "Non White European descent."
+    ~ 'Multi-Racial', 
     race.resp.white == TRUE &
       n_resp_selected == 1 ~ 'White',
     race.resp.black == TRUE &
@@ -346,15 +350,19 @@ df <- df %>% mutate(
       n_resp_selected  == 1 ~ 'Hispanic or Latinx',
     race.resp.middle_eastern == TRUE  &
       n_resp_selected  == 1 ~ 'Middle Eastern',
-    n_resp_selected  > 1 ~ 'Multi-Racial',
-    n_resp_selected  == 0 ~ 'Other/Prefer Not to Say/Missing'
+    race.resp.prefer_not_to_answer == TRUE ~ "Prefer not to answer", 
+    race.resp.other_specify == "Other, prefer to specify" & 
+      n_resp_selected  == 0 ~ "Other", 
+    n_resp_selected  == 0 ~ 'Missing'
   ),
   race_bin2 = case_when(
     race_bin != 'White' &
-      race_bin !=  'Other/Prefer Not to Say/Missing' ~ 'POC',
+      race_bin !=  'Prefer not to answer' &
+      race_bin != 'Missing' ~ 'POC/Other', 
     TRUE ~ race_bin
     )
   )
+
 ```
 
 ## Salary
@@ -363,7 +371,9 @@ df <- df %>% mutate(
 ## Salary
 
 breaks <- c(
-  0, 20000, 24999,  29999, 34999, 39999, 44999, 49999, 54999,
+  0, 
+  #20000, 24999,  29999, 34999, 39999,
+  44999, 49999, 54999,
   59999, 64999, 69999, 74999, 79999, 84999, 89999, 94999, 99999,
   104999, 109999, 114999, 119999, 124999, 129999, 134999, 139999,
   144999, 149999, 154999, 159999, 164999, 169999, 174999,
@@ -371,8 +381,9 @@ breaks <- c(
 )
 
 labels <- c(
-  "Under $20,000", "$20,000 to $24,999", 	"$25,000 to $29,999", 	
-  "$30,000 to $34,999", "$35,000 to $39,999", "$40,000 to $44,999", 	
+  # "Under $20,000", "$20,000 to $24,999", 	"$25,000 to $29,999", 	
+  # "$30,000 to $34,999", "$35,000 to $39,999", "$40,000 to $44,999", 	
+  "Under $45,000",
   "$45,000 to $49,999", "$50,000 to $54,999", "$55,000 to $59,999", 	
   "$60,000 to $64,999", "$65,000 to $69,999", "$70,000 to $74,999",
   "$75,000 to $79,999", "$80,000 to $84,999",	"$85,000 to $89,999",
