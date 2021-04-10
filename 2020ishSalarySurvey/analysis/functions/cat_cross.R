@@ -34,7 +34,12 @@ cat_cross <- function(x, question, cross_var,
     # calculate the number of people that have a particular category value 
     group_by(cross_var)  %>% 
     mutate(total_by_cross = sum(n)) %>% 
-    ungroup()
+    ungroup() %>% 
+    # remove perfer not to answer responses 
+    filter(!cross_var %in% "Prefer not to answer") %>% 
+    # remove groups with less than 5 people in them 
+    filter(total_by_cross >= 6)
+
   
   
   # Order by output by prespecified order, by alphabetic order 
@@ -56,9 +61,12 @@ cat_cross <- function(x, question, cross_var,
   # calculate percents + clean-up table
     df2 <- df2 %>%
     # within each variable value, calculate the percent of people who selected a particular response 
-    mutate(pct = formattable::percent(n/total_by_cross, 0), 
+    mutate(pct = n/total_by_cross, 
            # add n-size, so we can create a label for the table 
            cross_var_bin =  paste0(cross_var, "\n(n = ", total_by_cross, ")")) %>%
+   # replace any NAs with 0s 
+    # mutate(pct = ifelse(is.na(pct), 0, pct)) %>%
+    mutate(pct = formattable::percent(pct, 0)) %>%
     select(question, cross_var_bin, pct) %>%
     spread(key = cross_var_bin, value = pct)
   

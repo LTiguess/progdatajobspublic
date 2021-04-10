@@ -50,7 +50,9 @@ cross_table <- df  %>%
     mean = mean(salary),
     median_numeric = round(median(salary_bin_numeric), 0),
     n = n()
-  ) %>%
+  ) %>% 
+  # remmove if n is less than or equal to 5 
+  filter(n >= 6) %>% 
   ## add in the bin range associated with the median value
   left_join(
     salary_bin_crosswalk,

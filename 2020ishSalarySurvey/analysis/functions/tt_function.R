@@ -73,7 +73,7 @@ tt <- function(x, weights = NULL,
     df
   } else {
  #   Returns the HTML stuff
-    df %>%
+    df %>%  
       rename(' ' = variable,
              'Proportion' = unweighted_prop,
              'N' = unweighted_n) %>%

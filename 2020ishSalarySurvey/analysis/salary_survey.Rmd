@@ -10,21 +10,8 @@ output:
       collapsed: true
 ---
 
-**To Dos:**
 
-* Figure out alt ways of naming the gender bin values
-* Professional Development: For what PD did you use, only sel
-* Work experience: Continue to look into outliers
-* salary crosstab for % writing code?
-* Tools and Skills by Gender?
-* Figure out data viz options, so it is less text heavy
-
-helpful links
-
-* https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html#Integration_with_formattable
-* https://haozhu233.github.io/kableExtra/use_kableExtra_with_formattable.html
-* https://stackoverflow.com/questions/64065003/how-do-double-curly-brackets-work-in-dplyr
-* https://www.r-bloggers.com/2019/11/tidyverse-evolutions-curly-curly-operator-and-pivoting-feat-tidytuesday-data-leaflet-visuals/
+# Executive Summary 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -50,7 +37,7 @@ library(pollster)
 ```
 
 
-```{r, message = FALSE, echo = FALSE }
+```{r, message = FALSE, echo = FALSE, results='hide' }
 
 # Download data  
 # fn <- googledrive::drive_find("survey_responses_clean.csv", n_max = 1)
@@ -67,6 +54,10 @@ df <- readr::read_csv(here::here("data", "survey_responses.csv"))
 # read supporting data files in as well
 compensation_bin_crosswalk <- readr::read_csv(
   here::here("data", "compensation_bin_crosswalk.csv")
+)
+
+col_names <-  readr::read_csv(
+  here::here("data", "col_name_helper.csv")
 )
 
 # source all functions
@@ -103,7 +94,10 @@ df$years_worked_political[!is.na(df$years_worked_data) &
 # remove people who didnt complete the survey
 df <- df %>% filter(status == "Complete")
 
+# remove people who enter a salary of 0 
+df <- df %>% filter(compensation != 0)
 ```
+
 
 
 
@@ -124,7 +118,6 @@ tt(df$gender, order_prop = T)
 ### Race / Ethnicity
 **What is your race / ethnicity? Please select all that apply.**
 
-ToDo: Break out 'Other/Prefer Not to Say/Missing' into separate categories
 ```{r, message = FALSE, echo = FALSE }
 tt(df$race_bin,
    order_prop = T,
@@ -132,10 +125,6 @@ tt(df$race_bin,
    )
 ```
 
-
-```{r, message = FALSE, echo = FALSE }
-tt(df$race_bin2, order_prop = T)
-```
 
 
 ### Immigration Status
@@ -156,6 +145,13 @@ tt(df$immigration,
 
 ### Age
 **2020 - What is your year (YYYY) of birth?**
+
+
+
+```{r, message = FALSE, echo = FALSE }
+tt(df$age_bin, order_prop = F)
+```
+
 ```{r, message = FALSE, echo = FALSE }
 median_hist(df$age,
             x_label = "Age",
@@ -165,11 +161,6 @@ median_hist(df$age,
             color_hist = "#440154FF"
             )
 # + geom_histogram(fill = c("red"))
-```
-
-
-```{r, message = FALSE, echo = FALSE }
-tt(df$age_bin, order_prop = F)
 ```
 
 ### Sexuality
@@ -213,18 +204,13 @@ tt(df$education_level,
             "Post-bachelor’s Work, no Higher Degree",
             "Master’s or Professional Degree (MA, MPP, JD, etc.)",
             "Doctoral Degree (PhD)",
-            "Other"),
-    last_ord = c("Prefer not to answer", "Missing")
+            "Other", 
+            "Prefer not to answer")
    )
 ```
 
 
 ## Geography {.tabset}
-
-
-TODO:
-
-* Looking into visualizing the data as a map
 
 ### Country
 
@@ -236,18 +222,17 @@ tt(df$country, order_prop = T)
 ```
 
 ### Area
-**What's your zip code?**
+**What's your zip code?**  [only asked to US respondents, responses coded to Census metropolitan areas]
 
-TODO: Code responses coded to Census metropolitan areas
-```{r}
+```{r, message = FALSE, echo = FALSE }
 low_num_areas <- df %>%
   count(geo_name) %>%
   filter(n < 5)
 
 df$geo_name_bin <- df$geo_name
-df$geo_name_bin[df$geo_name %in% low_num_areas$geo_name] <- "Other"
+df$geo_name_bin[df$geo_name %in% low_num_areas$geo_name] <- "Other (less than 5 people in metro area)"
 
-tt(df$geo_name_bin, order_prop = T, last_ord = "Missing")
+tt(df$geo_name_bin, order_prop = T, last_ord = c("Other (less than 5 in metro area)", "Missing"))
 ```
 
 
@@ -260,8 +245,8 @@ median_hist(
   df$years_worked_political_data,
   x_label = "Years in Politics & Data",
   med_label = "The median years of experience is",
-  med_label_x_cord = median(df$years_worked_political_data, na.rm = TRUE) + 20,
-  med_label_y_cord = 50, 
+  med_label_x_cord = median(df$years_worked_political_data, na.rm = TRUE) + 7,
+  med_label_y_cord = 75, 
   color_hist = "#932667FF")
 ```
 
@@ -273,8 +258,8 @@ median_hist(
   df$years_worked_political,
   x_label = "Years in Politics But Not Data",
   med_label = "The median years of experience is",
-  med_label_x_cord = median(df$years_worked_political, na.rm = TRUE) + 20,
-  med_label_y_cord = 50, 
+  med_label_x_cord = median(df$years_worked_political, na.rm = TRUE) + 8,
+  med_label_y_cord = 75, 
   color_hist = "#DD513AFF"
   )
 ```
@@ -315,8 +300,6 @@ median_hist(
 
 ## Employment Status {.tabset}
 
-TO DO: Combine current status + during 2020 election cycle into a data viz. Something like this: https://www.crackthecode.io/salary2017#appendix
-
 ### Current Status
 **What is your current employment status (as of January 2021)?**
 ```{r, message = FALSE, echo = FALSE }
@@ -329,6 +312,15 @@ mult_resp(df, "employment_status_jan_21",  order_prop = T)
 **What was your employment status during the 2020 election cycle?**
 ```{r, message = FALSE, echo = FALSE }
 mult_resp(df, "employment_status_cycle_20",  order_prop = T)
+```
+
+### Employed in 2020 (full/part time) --> Jan 2021 Employment Status 
+**REMOVE**
+```{r, message = FALSE, echo = FALSE }
+mult_resp(df %>% filter(employment_status_cycle_20.resp.full_time == TRUE |
+                          employment_status_cycle_20.resp.part_time == TRUE),
+          "employment_status_jan_21",
+          order_prop = T)
 ```
 
 
@@ -451,9 +443,9 @@ cat_cross(x = df,
   # add some nice formatting 
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 610)` = formattable::proportion_bar(), 
+        `All\n(n = 608)` = formattable::proportion_bar(), 
         `Cis man\n(n = 259)` = formattable::proportion_bar(), 
-        `Non-Cis man\n(n = 343)` = formattable::proportion_bar()), 
+        `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
         align = c('l', 'r', 'r', 'r', 'r'))
 ```
 
@@ -473,7 +465,17 @@ cat_cross(x = df,
       "Other",
      "Freelance"),
   last_ord = NULL
-            )
+            )  %>%
+  # add some nice formatting 
+      rename(' ' = question) %>%
+      formattable::formattable(list(
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `Asian or Asian American (including South Asian)\n(n = 77)` = formattable::proportion_bar(), 
+        `Black\n(n = 30)` = formattable::proportion_bar(), 
+        `Hispanic or Latinx\n(n = 33)`  = formattable::proportion_bar(),
+        `Multi-Racial\n(n = 63)`  = formattable::proportion_bar(), 
+        `White\n(n = 390)` = formattable::proportion_bar()), 
+        align = c('l', 'r', 'r', 'r', 'r', 'r', 'r'))
 ```
 
 ### By Race (Binned)
@@ -495,23 +497,17 @@ cat_cross(x = df,
   # add some nice formatting
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 610)` = formattable::proportion_bar(),
-        `POC\n(n = 211)` = formattable::proportion_bar(),
+        `All\n(n = 608)` = formattable::proportion_bar(),
+        `POC/Other\n(n = 212)` = formattable::proportion_bar(),
         `White\n(n = 390)` = formattable::proportion_bar()),
         align = c('l', 'r', 'r', 'r', 'r'))
 ```
 
 
 ### By Gender x Race (Binned)
+TODO: Figure out why proportion bars for 'POC/Other | Cis man (n = 85)' and 'White | Non-Cis man (n = 214)' are off. Probably beccause NA values. 
 ```{r, message = FALSE, echo = FALSE }
-x <- df %>%
-  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>%
-    filter(!is.na(seniority_level),
-           !is.na(gender_race),
-           gender_bin != "Prefer not to answer",
-           race_bin2 != "Other/Prefer Not to Say/Missing" )
-
-cat_cross(x = x, 
+cat_cross(x = df, 
   question = seniority_level, 
   cross_var = gender_race, 
   order_by = "levels", 
@@ -528,12 +524,13 @@ cat_cross(x = x,
   # add some nice formatting 
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 597)` = formattable::proportion_bar(), 
-        `POC | Cis man\n(n = 83)` = formattable::proportion_bar(), 
-        `POC | Non-Cis man\n(n = 127)` = formattable::proportion_bar(), 
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `POC/Other | Cis man\n(n = 85)` = formattable::proportion_bar(), 
+        `POC/Other | Non-Cis man\n(n = 126)` = formattable::proportion_bar(), 
         `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
         `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
         align = c('l', 'r', 'r', 'r', 'r', 'r'))
+
 
 ```
 
@@ -572,9 +569,9 @@ cat_cross(x = df,
   # add some nice formatting 
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 610)` = formattable::proportion_bar(), 
+        `All\n(n = 608)` = formattable::proportion_bar(), 
         `Cis man\n(n = 259)` = formattable::proportion_bar(), 
-        `Non-Cis man\n(n = 343)` = formattable::proportion_bar()), 
+        `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
         align = c('l', 'r', 'r', 'r', 'r'))
 
 ```
@@ -596,15 +593,17 @@ cat_cross(x = df,
      "10-14 staffers", 
      "More than 15 staffers"), 
   last_ord = NULL
-)
-  #           ) %>%
-  # # add some nice formatting 
-  #     rename(' ' = question) %>%
-  #     formattable::formattable(list(
-  #       `All\n(n = 610)` = formattable::proportion_bar(), 
-  #       `POC\n(n = 211)` = formattable::proportion_bar(), 
-  #       `White\n(n = 390)` = formattable::proportion_bar()), 
-  #       align = c('l', 'r', 'r', 'r', 'r'))
+) %>%
+  # add some nice formatting 
+      rename(' ' = question) %>%
+      formattable::formattable(list(
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `Asian or Asian American (including South Asian)\n(n = 77)` = formattable::proportion_bar(), 
+        `Black\n(n = 30)` = formattable::proportion_bar(), 
+        `Hispanic or Latinx\n(n = 33)`  = formattable::proportion_bar(),
+        `Multi-Racial\n(n = 63)`  = formattable::proportion_bar(), 
+        `White\n(n = 390)` = formattable::proportion_bar()), 
+        align = c('l', 'r', 'r', 'r', 'r', 'r', 'r'))
 
 ```
 
@@ -624,8 +623,8 @@ cat_cross(x = df,
   # add some nice formatting
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 610)` = formattable::proportion_bar(),
-        `POC\n(n = 211)` = formattable::proportion_bar(),
+        `All\n(n = 608)` = formattable::proportion_bar(),
+        `POC/Other\n(n = 212)` = formattable::proportion_bar(),
         `White\n(n = 390)` = formattable::proportion_bar()),
         align = c('l', 'r', 'r', 'r', 'r'))
 
@@ -633,14 +632,8 @@ cat_cross(x = df,
 
 ### By Gender x Race (Binned)
 ```{r, message = FALSE, echo = FALSE }
-x <- df %>%
-  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>%
-    filter(!is.na(num_staffers),
-           !is.na(gender_race),
-           gender_bin != "Prefer not to answer",
-           race_bin2 != "Other/Prefer Not to Say/Missing" )
 
-cat_cross(x = x, 
+cat_cross(x = df, 
   question = num_staffers, 
   cross_var = gender_race, 
   order_by = "levels", 
@@ -655,9 +648,9 @@ cat_cross(x = x,
   # add some nice formatting 
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 597)` = formattable::proportion_bar(), 
-        `POC | Cis man\n(n = 83)` = formattable::proportion_bar(), 
-        `POC | Non-Cis man\n(n = 127)` = formattable::proportion_bar(), 
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `POC/Other | Cis man\n(n = 85)` = formattable::proportion_bar(), 
+        `POC/Other | Non-Cis man\n(n = 126)` = formattable::proportion_bar(), 
         `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
         `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
         align = c('l', 'r', 'r', 'r', 'r', 'r'))
@@ -671,14 +664,15 @@ cat_cross(x = x,
 ### Overall
 ```{r, message = FALSE, echo = FALSE }
 x <- df$perc_time_coding * 100
+
 plot <- ggplot(
     as.data.frame(x[!is.na(x)]),
       aes(
         x = x[!is.na(x)])) +
-      geom_bar(stat = "count") +
+      geom_bar(stat = "count", fill = "#440154FF" ) +
       xlab("% of Time Conducting Analysis or Writing Code") +
-      ylab("Count") + theme_bw()
-
+      ylab("Count") + theme_bw() 
+   
 plot
 
 ```
@@ -762,10 +756,7 @@ ggplot(tmp, aes(x = perc_time_coding * 100,
 # Skills + Tools
 
 
-## Skills + Tools {.tabset}
-
-
-### Tools 
+## Tools {.tabset}
 
 **How comfortable are you with the following skills and tools?**
 https://stackoverflow.com/questions/43520318/how-to-use-percentage-as-label-in-stacked-bar-plot 
@@ -782,7 +773,7 @@ https://stackoverflow.com/questions/43520318/how-to-use-percentage-as-label-in-s
 This graph displays the full distribution of responses to skill level. Responses are ordered by the proportion of respondents who rate themselves as having intermediate or advanced skills.
 
 
-```{r}
+```{r, message = FALSE, echo = FALSE }
 # make a df of just the columns/values we are interested in
 tmp <- df %>%
   select(contains("skills_comfort.resp")) 
@@ -800,15 +791,19 @@ plot_data <- tmp2 %>%
   # create label for bar plot
   bar_label =  scales::label_percent(accuracy = 1)(pct), 
  # value = factor(value, levels = c("Never used this before", "Introductory", "Novice", "Intermediate", "Advanced"))) %>% 
-  value = factor(value, levels = c( "Advanced", "Intermediate",  "Novice", "Introductory", "Never used this before")))
-  
+  value = factor(value, levels = c( "Advanced", "Intermediate",  "Novice", "Introductory", "Never used this before"))) %>%
+  # add cleanned verison of responses 
+   left_join(
+       col_names,
+       by = c("variable" = "col_name_final"))
+
 # rename values in variable column so it easier to plot
 
   # factor columns so it follows a particular ordering
   
 
 
-p <- ggplot(plot_data, aes(x = variable, y = pct, fill = value)) +
+p <- ggplot(plot_data, aes(x = response_name, y = pct, fill = value)) +
   geom_col(width = 0.7) +
   coord_flip() +
   scale_fill_viridis_d() +
@@ -831,20 +826,11 @@ p
 ```
 
 
-### Learn
-**How did you learn the skills and tools you use weekly for your job? Please pick your top two options**
-
-```{r, message = FALSE, echo = FALSE }
-mult_resp(df, "skills_learning_method", order_prop = T)
-```
-
-
 ## Skills {.tabset}
 **Which of the following items have you personally done in the last year? Please select all that apply.**
 
 ### Technical
 
-TODO: Add in "none of the above" responses.
 ```{r, message = FALSE, echo = FALSE }
 # technical
 
@@ -858,10 +844,11 @@ tmp <- select(
   projects_done_management.resp.polling,
   projects_done_management.resp.build_model,
   projects_done_management.resp.software_dev,
-  projects_done_management.resp.dev_ops
-              )
-
-## missing none of the above
+  projects_done_management.resp.dev_ops, 
+  projects_done_management.resp.reporting, 
+  projects_done_technical.resp.none
+              ) %>% 
+  rename(projects_done_management.resp.none = projects_done_technical.resp.none)
 
 mult_resp(tmp, "projects_done_management", order_prop = T)
 
@@ -870,7 +857,6 @@ mult_resp(tmp, "projects_done_management", order_prop = T)
 
 
 ### Management
-TODO: Add in "none of the above" responses.
 
 ```{r, message = FALSE, echo = FALSE }
 tmp <- select(
@@ -880,16 +866,27 @@ tmp <- select(
   projects_done_management.resp.pitch_project,
   projects_done_management.resp.coordinate_orgs,
   projects_done_management.resp.hire_fire,
-  projects_done_management.resp.create_prof_dev_plan
+  projects_done_management.resp.create_prof_dev_plan, 
+  projects_done_management.resp.none
               )
 
-## missing none of the above
 mult_resp(tmp, "projects_done_management", order_prop = T)
+```
+
+
+## Learn
+**How did you learn the skills and tools you use weekly for your job? Please pick your top two options**
+
+```{r, message = FALSE, echo = FALSE }
+mult_resp(df, "skills_learning_method", order_prop = T)
 ```
 
 
 ### Free Text 
 **Please describe any other major components of your work.**
+```{r}
+df$work_compenents_freetext[!is.na(df$work_compenents_freetext)] %>% dplyr::tibble()
+```
 
 
 # Salary Overview
@@ -959,8 +956,8 @@ cat_cross(x = df,
   # add some nice formatting 
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 597)` = formattable::proportion_bar(), 
-        `Cis man\n(n = 256)` = formattable::proportion_bar(), 
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `Cis man\n(n = 259)` = formattable::proportion_bar(), 
         `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
         align = c('l', 'r', 'r', 'r'))
 ```
@@ -979,9 +976,9 @@ cat_cross(x = df,
   # add some nice formatting 
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 597)` = formattable::proportion_bar(), 
-        `POC\n(n = 210)` = formattable::proportion_bar(), 
-        `White\n(n = 387)` = formattable::proportion_bar()), 
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `POC\n(n = 212)` = formattable::proportion_bar(), 
+        `White\n(n = 390)` = formattable::proportion_bar()), 
         align = c('l', 'r', 'r', 'r', 'r'))
 
 ```
@@ -989,15 +986,8 @@ cat_cross(x = df,
 #### By Gender x Race (Binned)
 
 ```{r, message = FALSE, echo = FALSE }
-# do some data munging before entering df into function argument
-x <- df %>%
-  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>%
-    filter(!is.na(negotiate_yesno),
-           !is.na(gender_race),
-           gender_bin != "Prefer not to answer",
-           race_bin2 != "Other/Prefer Not to Say/Missing" )
 
-cat_cross(x = x, 
+cat_cross(x = df, 
   question = negotiate_yesno, 
   cross_var = gender_race, 
   order_by = "levels", 
@@ -1007,9 +997,9 @@ cat_cross(x = x,
   # add some nice formatting 
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 597)` = formattable::proportion_bar(), 
-        `POC | Cis man\n(n = 83)` = formattable::proportion_bar(), 
-        `POC | Non-Cis man\n(n = 127)` = formattable::proportion_bar(), 
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `POC/Other | Cis man\n(n = 85)` = formattable::proportion_bar(), 
+        `POC/Other | Non-Cis man\n(n = 126)` = formattable::proportion_bar(), 
         `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
         `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
         align = c('l', 'r', 'r', 'r', 'r', 'r'))
@@ -1039,7 +1029,7 @@ mult_resp_cross(
   cross_var = gender_bin
   )  %>%
   # add some nice formatting 
-      rename(' ' = var) %>%
+      rename(' ' = response_name) %>%
       formattable::formattable(list(
         `All\n(n = 219)` = formattable::proportion_bar(), 
         `Cis man\n(n = 92)` = formattable::proportion_bar(), 
@@ -1057,13 +1047,31 @@ mult_resp_cross(
   cross_var = race_bin2
   )  %>%
   # add some nice formatting 
-      rename(' ' = var) %>%
+      rename(' ' = response_name) %>%
       formattable::formattable(list(
         `All\n(n = 219)` = formattable::proportion_bar(), 
-        `Other/Prefer Not to Say/Missing\n(n = 3)` = formattable::proportion_bar(), 
-        `POC\n(n = 83)` = formattable::proportion_bar(), 
+        `POC/Other\n(n = 85)` = formattable::proportion_bar(), 
         `White\n(n = 133)` = formattable::proportion_bar()),
         align = c('l', 'r', 'r', 'r', 'r'))
+```
+
+#### By Gender x Race 
+```{r, message = FALSE, echo = FALSE }
+mult_resp_cross( x = df %>% # remove people who didn't answer yes to the previous question
+  filter(negotiate_yesno =="Yes"),
+  question_prefix = "negotiation_result", 
+  cross_var = gender_race
+            ) %>%
+  # add some nice formatting 
+      rename(' ' = response_name) %>%
+      formattable::formattable(list(
+        `All\n(n = 219)` = formattable::proportion_bar(), 
+        `POC/Other | Cis man\n(n = 37)` = formattable::proportion_bar(), 
+        `POC/Other | Non-Cis man\n(n = 48)` = formattable::proportion_bar(), 
+        `White | Cis man\n(n = 55)` = formattable::proportion_bar(), 
+        `White | Non-Cis man\n(n = 76)` = formattable::proportion_bar()),
+        align = c('l', 'r', 'r', 'r', 'r', 'r'))
+
 ```
 
 
@@ -1106,10 +1114,21 @@ mult_resp(df %>% filter(prof_dev_yesno == "Yes"),
 
 ### Free Text 
 **Thinking about your career path and focus, which one specific skill or tool do you most want to learn?**
+```{r}
+# order by count
+as.data.frame(table(df$skill_to_learn)) %>% dplyr::arrange(desc(Freq)) %>% top_n(20)
+```
+
+```{r}
+df$skill_to_learn[!is.na(df$skill_to_learn)] %>% dplyr::tibble()
+```
+
+
 TODO
 
 # Salary Crosstabs 
 
+In all of the following crosstabs, salary information is excluded for groups with fewer than 5 people.
 
 ## Respondent Characteristics {.tabset}
 
@@ -1228,6 +1247,20 @@ salary_cross(x = df,
              ) 
 ```
 
+### Race / Ethnicity (Binned)
+
+```{r, message = FALSE, echo = FALSE }
+
+salary_cross(x = df, 
+             variable = race_bin2,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             salary_bin_numeric = compensation_bin_numeric,
+             order_by = "n", # n, levels, alpha
+             last_ord = c("Prefer not to answer")
+             ) 
+```
+
 ```{r, message = FALSE, echo = FALSE }
 
 df2 <- df %>%
@@ -1238,7 +1271,7 @@ df2 <- df %>%
     !is.na(years_worked_political_data),
     !is.na(years_worked_political),
     !is.na(years_worked_data),
-    race_bin2 != 'Other/Prefer Not to Say/Missing') %>%
+    race_bin2 != 'Prefer not to answer') %>%
   transmute(
     race = race_bin2,
     salary_total =  compensation,
@@ -1263,16 +1296,12 @@ ggplot(df2, aes(x = totalyears, y = salary_total, color = race)) +
 ```
 
 
-### Gender x Race / Ethnicity (Binned)
+### Gender x Race / Ethnicity 
 
 
 ```{r, message = FALSE, echo = FALSE }
 
-df1 <- df %>% 
-  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) 
-
-
-salary_cross(x = df1, 
+salary_cross(x = df, 
              variable = gender_race,
              salary = compensation, 
              salary_bin = compensation_bin, 
@@ -1280,9 +1309,6 @@ salary_cross(x = df1,
              order_by = "n", # n, levels, alpha
              last_ord = c("Other/Prefer Not to Say/Missing")
              ) 
-
-
-rm(df1)
 
 ```
 
@@ -1297,9 +1323,9 @@ df2 <- df %>%
     !is.na(years_worked_political_data),
     !is.na(years_worked_political),
     !is.na(years_worked_data),
-    gender_race %in% c("POC | Non-Cis man",
+    gender_race %in% c("POC/Other | Non-Cis man",
                        "White | Non-Cis man",
-                       "POC | Cis man", 
+                       "POC/Other | Cis man", 
                        "White | Cis man")) %>%
   transmute(
    variable = gender_race,
@@ -1418,7 +1444,7 @@ salary_cross(x = df,
 
 
 ### Immigration Status
-
+**DELETE**
 ```{r, message = FALSE, echo = FALSE }
 
 salary_cross(x = df, 
@@ -1531,6 +1557,7 @@ salary_cross(x = df,
 ```
 
 ### Seniority Binned ( entry / mid / senior)
+**MOVE TO APPENDIX**
 
 ```{r, message = FALSE, echo = FALSE }
 
@@ -1580,6 +1607,7 @@ salary_cross(x = df,
 
 
 ### Management Binned (0 staff, 1- 4, and >=5)
+**MOVE TO APPENDIX**
 ```{r, message = FALSE, echo = FALSE }
 salary_cross(x = df %>% mutate(
   num_staffers_bin = case_when(
@@ -1618,7 +1646,7 @@ salary_cross(x = df,
 ```
 
 ### Time Writing Code 
-
+**DELETE**
 ```{r, message = FALSE, echo = FALSE }
 salary_cross(x = df, 
              variable = perc_time_coding,
@@ -1640,21 +1668,6 @@ ggplot(df, aes(x = perc_time_coding * 100, y = compensation)) +
 ```
 
 
-#### Take into account Managing 
-```{r, message = FALSE, echo = FALSE }
-## creates chart
-ggplot(df, aes(x = perc_time_coding * 100, y = compensation)) +
-  geom_jitter(stat = "identity", width = 2, height = 2) +
-  geom_smooth(method = "loess") +
-  theme_light()+
-  xlab("Percent of Time Writing Code")+
-  ylab("Salary") + 
-  facet_wrap(~ num_staffers) 
-```
-
-
-## Tools + Skills {.tabset}
-Learn (on the job etc) x salary medians? 
 
 
 # Career Plans {.tabset}
@@ -1667,7 +1680,10 @@ Learn (on the job etc) x salary medians?
 mult_resp(df, "next_career_step",  order_prop = T)
 ```
 
-## Plans to Leave
+## Plans to Leave {.tabset}
+**MOVE CROSSTABS TO APPENDIX**
+
+### Overall 
 
 **Are you planning to leave your organization within the next year?**
 ```{r, message = FALSE, echo = FALSE }
@@ -1682,7 +1698,6 @@ tt(df$leaving_org,
    )
 ```
 
-## Plans to Leave Crosstabs {.tabset}
 ### By Gender 
 
 ```{r, message = FALSE, echo = FALSE }
@@ -1699,9 +1714,9 @@ cat_cross(x = df,
   # add some nice formatting 
       rename(' ' = question) %>%
       formattable::formattable(list(
-        `All\n(n = 610)` = formattable::proportion_bar(), 
+        `All\n(n = 608)` = formattable::proportion_bar(), 
         `Cis man\n(n = 259)` = formattable::proportion_bar(), 
-        `Non-Cis man\n(n = 343)` = formattable::proportion_bar()), 
+        `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
         align = c('l', 'r', 'r', 'r', 'r'))
 ```
 
@@ -1717,16 +1732,19 @@ cat_cross(x = df,
             "I’m not planning to leave", 
             "My current job / contract ends within the next 12 months", 
             "I am currently unemployed"), 
-          last_ord = NULL)
-# %>%
-#   # add some nice formatting 
-#       rename(' ' = question) %>%
-#       formattable::formattable(list(
-#         `All\n(n = 610)` = formattable::proportion_bar(), 
-#         `Cis man\n(n = 259)` = formattable::proportion_bar(), 
-#         `Non-Cis man\n(n = 343)` = formattable::proportion_bar()), 
-#         align = c('l', 'r', 'r', 'r', 'r'))
+          last_ord = NULL)  %>%  # add some nice formatting 
+      rename(' ' = question) %>%
+      formattable::formattable(list(
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `Asian or Asian American (including South Asian)\n(n = 77)` = formattable::proportion_bar(), 
+        `Black\n(n = 30)` = formattable::proportion_bar(), 
+        `Hispanic or Latinx\n(n = 33)`  = formattable::proportion_bar(),
+        `Multi-Racial\n(n = 63)`  = formattable::proportion_bar(), 
+        `White\n(n = 390)` = formattable::proportion_bar()), 
+        align = c('l', 'r', 'r', 'r', 'r', 'r', 'r'))
+
 ```
+
 ### By Race Bin 
 ```{r, message = FALSE, echo = FALSE }
 cat_cross(x = df, 
@@ -1738,7 +1756,15 @@ cat_cross(x = df,
             "I’m not planning to leave", 
             "My current job / contract ends within the next 12 months", 
             "I am currently unemployed"), 
-          last_ord = NULL)
+          last_ord = NULL)  %>%
+  # add some nice formatting 
+      rename(' ' = question) %>%
+      formattable::formattable(list(
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `POC/Other\n(n = 212)` = formattable::proportion_bar(), 
+        `White\n(n = 390)` = formattable::proportion_bar()), 
+        align = c('l', 'r', 'r', 'r', 'r'))
+
 ```
 
 
@@ -1746,14 +1772,7 @@ cat_cross(x = df,
 
 ```{r, message = FALSE, echo = FALSE }
 
-x <- df %>%
-  mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>%
-    filter(!is.na(num_staffers),
-           !is.na(gender_race),
-           gender_bin != "Prefer not to answer",
-           race_bin2 != "Other/Prefer Not to Say/Missing" )
-
-cat_cross(x = x, 
+cat_cross(x = df, 
           question = leaving_org, 
           cross_var = gender_race, 
           order_by = "levels", 
@@ -1762,7 +1781,16 @@ cat_cross(x = x,
             "I’m not planning to leave", 
             "My current job / contract ends within the next 12 months", 
             "I am currently unemployed"), 
-          last_ord = NULL)
+          last_ord = NULL) %>%
+  # add some nice formatting 
+      rename(' ' = question) %>%
+      formattable::formattable(list(
+        `All\n(n = 608)` = formattable::proportion_bar(), 
+        `POC/Other | Cis man\n(n = 85)` = formattable::proportion_bar(), 
+        `POC/Other | Non-Cis man\n(n = 126)` = formattable::proportion_bar(), 
+        `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
+        `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
+        align = c('l', 'r', 'r', 'r', 'r', 'r'))
 ```
 
 
@@ -1800,6 +1828,9 @@ mult_resp(df %>% filter(covid_benefits_yesno == "Yes"),
 
 ## Free Text
 **Please briefly describe how your organization handled the COVID-19 pandemic to make things easier for staff. **
+```{r}
+df$covid_freetext[!is.na(df$covid_freetext)] %>% dplyr::tibble()
+```
 
 TODO
 
@@ -1826,3 +1857,29 @@ tt(df$when_unionized[df$is_unionized == "Yes"],
    lvls = c("Within the past two years", "In the past two to five years", "More than five years ago", "I’m not sure")
    )
 ```
+
+
+# Notes {.tabset}
+
+
+## Eligibility
+
+Respondents were only eligible to take this survey if (1) they worked in progressive politics AND (2) if their organization, role, or team focused on data, analytics, or technology.
+
+Respondents satisfied the first criteria if they answered “Yes” or "Did but employment ended post-election" to the following question:
+
+* Do you currently work at an organization that either works in progressive politics or has some clients who work in progressive politics or do you currently work for a government body? Or, if you freelance, do you have some clients that work in progressive politics?
+
+
+The second criteria was satisfied if the respondents answered “Yes” to one or more of the following questions:
+
+* Is the primary focus (>40% of resources) of your organization data, analytics, or technology?
+* Is the primary focus (>40% of resources) of your team data, analytics, or technology?
+* Is the primary focus (>40% of time) of your role data, analytics or technology?
+
+
+## Author and Thanks
+
+
+
+

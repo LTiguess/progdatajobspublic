@@ -21,7 +21,7 @@ mult_resp_cross <- function(x, question_prefix, cross_var){
    df2 <- df %>% 
      # add in the df that doesnt break down results by cross variable values  
      bind_rows(all)  %>% 
-      mutate_at(vars(contains(question_prefix)), funs( as.logical(.))) %>%
+      mutate_at(vars(contains(question_prefix)), list(~as.logical(.))) %>%
       gather(key = var, value = response, -cross_var) %>%
      # for each question x cross variable, count number of "TRUE" results and calculate percent
      group_by(cross_var, var) %>% 
@@ -31,8 +31,15 @@ mult_resp_cross <- function(x, question_prefix, cross_var){
      mutate(pct = formattable::percent(total_yes/n, 0), 
     # add n-size, so we can create a label for the table 
      cross_var_bin =  paste0(cross_var, "\n(n = ", n, ")")) %>%
-     select(var, cross_var_bin, pct) %>%
-     spread(key = cross_var_bin, value = pct)
+     # remove groups with less than 5 people in them 
+     filter(n >= 6) %>% 
+     # add in cleanned response name
+     left_join(
+       col_names,
+       by = c("var" = "col_name_final")
+     ) %>% 
+     select(response_name, cross_var_bin, pct) %>%
+     spread(key = cross_var_bin, value = pct) 
   
 # return semi-formatted counts  
   return(df2)

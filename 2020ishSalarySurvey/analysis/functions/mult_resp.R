@@ -20,7 +20,7 @@ mult_resp <- function(df, question.prefix, raw_df = F,
   df2 <- 
     # select the columns we are interested in analysing 
     select(df, contains(question.prefix)) %>%
-    mutate_all(funs( as.logical(.)))  %>%
+    mutate_all(list(~as.logical(.)))  %>%
     mutate(
       # for each respondent, count the number of 'True' values 
       n_qs_answered = rowSums(., na.rm = TRUE))  %>% 
@@ -36,7 +36,12 @@ mult_resp <- function(df, question.prefix, raw_df = F,
     group_by(response) %>%
     summarize(
       unweighted_prop  = sum(answer_q, na.rm = T)/ n_res,
-      unweighted_n = sum(answer_q, na.rm = T))
+      unweighted_n = sum(answer_q, na.rm = T)) %>% 
+    # add in cleanned response name
+    left_join(
+      col_names,
+      by = c("response" = "col_name_final")
+    )
   
   
   
@@ -53,7 +58,7 @@ mult_resp <- function(df, question.prefix, raw_df = F,
   }
   
   freq <- freq %>%
-    select(response, unweighted_prop, unweighted_n) %>%
+    select(response_name, unweighted_prop, unweighted_n) %>%
     mutate(unweighted_prop = formattable::percent(unweighted_prop, 0), 
            unweighted_n = formattable::digits(unweighted_n, 0)
     )
@@ -63,7 +68,7 @@ mult_resp <- function(df, question.prefix, raw_df = F,
     freq
   } else {
     freq %>%
-      rename(' ' = response,
+      rename(' ' = response_name,
              'Proportion' = unweighted_prop, 
              'N' = unweighted_n) %>%
       formattable::formattable(list(
