@@ -245,12 +245,15 @@ df <- df %>% mutate(
     # must have said they worked in politics
     work_in_politics %in% c("Yes", "Did but employment ended post-election") &
     # either org, team, or role must be data focused
-    any(
-      data_40_org != 'No',
-      data_40_team != 'No' ,
+    (
+      data_40_org != 'No' |
+      data_40_team != 'No' |
       data_40_role != 'No'
     )
   )
+
+# tmp <- df %>% filter(eligible == TRUE)
+# table(tmp$data_40_org, tmp$data_40_role, tmp$data_40_team)
 
 # Gut Check Logic
 
@@ -446,6 +449,14 @@ df$zipcode <- stringr::str_pad(
 # join newly cleaned zip codes to real purchasing power dataset
 df <- df %>%
   left_join(rpp, by = c("zipcode" = "zip"))
+```
+
+# Remove duplicates 
+```{r}
+table(!duplicated(df$response_id))
+
+df <- df %>% distinct(response_id, .keep_all = TRUE)
+
 ```
 
 

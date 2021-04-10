@@ -610,26 +610,29 @@ df &lt;- df %&gt;%
     # must have said they worked in politics
     work_in_politics %in% c(&quot;Yes&quot;, &quot;Did but employment ended post-election&quot;) &amp;
     # either org, team, or role must be data focused
-    any(
-      data_40_org != 'No',
-      data_40_team != 'No' ,
+    (
+      data_40_org != 'No' |
+      data_40_team != 'No' |
       data_40_role != 'No'
     )
   )
+
+# tmp &lt;- df %&gt;% filter(eligible == TRUE)
+# table(tmp$data_40_org, tmp$data_40_role, tmp$data_40_team)
 
 # Gut Check Logic
 
 # most people who completed the survey are eligible
 df %&gt;% tabyl(status, eligible)</code></pre>
 <pre><code>##    status FALSE TRUE
-##  Complete    30  624
-##   Partial   123  104</code></pre>
+##  Complete    44  610
+##   Partial   136   91</code></pre>
 <pre class="r"><code># most people got kicked out for not answering the questions
 df %&gt;% filter(eligible == FALSE) %&gt;%
   tabyl(data_40_org, data_40_team, data_40_role)</code></pre>
 <pre><code>## $No
 ##  data_40_org No Yes
-##           No  7   1
+##           No 34   1
 ##          Yes  2   1
 ## 
 ## $Yes
@@ -646,10 +649,10 @@ df %&gt;% filter(eligible == FALSE) %&gt;%
 df %&gt;% filter(eligible == FALSE) %&gt;%
   tabyl(work_in_politics)</code></pre>
 <pre><code>##                        work_in_politics  n    percent valid_percent
-##  Did but employment ended post-election 11 0.07189542    0.07482993
-##                                      No 85 0.55555556    0.57823129
-##                                     Yes 51 0.33333333    0.34693878
-##                                    &lt;NA&gt;  6 0.03921569            NA</code></pre>
+##  Did but employment ended post-election 15 0.08333333     0.0862069
+##                                      No 85 0.47222222     0.4885057
+##                                     Yes 74 0.41111111     0.4252874
+##                                    &lt;NA&gt;  6 0.03333333            NA</code></pre>
 <pre class="r"><code># potentially some misunderstanding of the question, but not much
 df %&gt;% filter(work_in_politics == &quot;No&quot;) %&gt;%
   tabyl(org_type)</code></pre>
@@ -837,9 +840,17 @@ df$zipcode &lt;- stringr::str_pad(
 <pre class="r"><code># join newly cleaned zip codes to real purchasing power dataset
 df &lt;- df %&gt;%
   left_join(rpp, by = c(&quot;zipcode&quot; = &quot;zip&quot;))</code></pre>
+</div>
+</div>
+<div id="remove-duplicates" class="section level1">
+<h1>Remove duplicates</h1>
+<pre class="r"><code>table(!duplicated(df$response_id))</code></pre>
+<pre><code>## 
+## FALSE  TRUE 
+##    14   881</code></pre>
+<pre class="r"><code>df &lt;- df %&gt;% distinct(response_id, .keep_all = TRUE)</code></pre>
 <div id="unfinished-code-below" class="section level7">
 <p>Unfinished Code Below</p>
-</div>
 </div>
 </div>
 <div id="data-validation-and-attention-checks" class="section level1">
@@ -897,11 +908,10 @@ googledrive::drive_upload(
 ## See gargle's &quot;Non-interactive auth&quot; vignette for more details:
 ## https://gargle.r-lib.org/articles/non-interactive-auth.html</code></pre>
 <pre><code>## The googledrive package is using a cached token for mahelet.fekade@gmail.com.</code></pre>
-<pre><code>## Auto-refreshing stale OAuth token.</code></pre>
 <pre><code>## Local file:
 ##   * /Users/maheletfekade/Documents/salary_survey/git/progdatajobspublic/2020ishSalarySurvey/data/survey_responses.csv
 ## uploaded into Drive file:
-##   * 1urZL8JCFdjFDTARpClQbCtX41NV3TSML: 19Lnuqfyp5DS9IqRK2E--MiBDHdldgjrw
+##   * 1urZL8JCFdjFDTARpClQbCtX41NV3TSML: 1Wa4j4U3mbuiI72JdQHCYNQR5d_KjS5ID
 ## with MIME type:
 ##   * text/csv</code></pre>
 </div>
