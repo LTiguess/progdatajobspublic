@@ -179,8 +179,6 @@ Next, we use the newly created column names as key-value pairs, and substitute
 the current column names for their more helpful versions.
 
 ```{r}
-# TODO: Updated: Deal with the technical and non technical versions
-# of the column "None of the above:Which of the following items have you personally done in the last year? Please select all that apply."      
 # manually rename by position
 stopifnot(
   colnames(df)[144] ==
@@ -191,10 +189,16 @@ stopifnot(
     "Other, prefer to specify:What is your race / ethnicity? Please select all that apply."
 )
 
+stopifnot(
+  colnames(df)[72] ==
+    "None of the above:Which of the following items have you personally done in the last year? Please select all that apply." 
+)
+
 df <- df %>%
   rename(
     "projects_done_technical.resp.none" = 144,
-    "race.resp.other_specify_freetext" = 158
+    "race.resp.other_specify_freetext" = 158, 
+    "projects_done_management.resp.none" = 72
   )
 
 # replace original names with updated versions, matching on old names
@@ -366,6 +370,11 @@ df <- df %>% mutate(
     )
   )
 
+```
+
+## Gender x Race 
+```{r}
+df <- df %>% mutate(gender_race = paste(race_bin2, gender_bin, sep = " | "))
 ```
 
 ## Salary

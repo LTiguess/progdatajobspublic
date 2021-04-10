@@ -551,9 +551,7 @@ colnames(df) &lt;- purrr::map_chr(
 <div id="recode-column-names-with-values-from-helper-table" class="section level2">
 <h2>Recode Column Names with Values from Helper Table</h2>
 <p>Next, we use the newly created column names as key-value pairs, and substitute the current column names for their more helpful versions.</p>
-<pre class="r"><code># TODO: Updated: Deal with the technical and non technical versions
-# of the column &quot;None of the above:Which of the following items have you personally done in the last year? Please select all that apply.&quot;      
-# manually rename by position
+<pre class="r"><code># manually rename by position
 stopifnot(
   colnames(df)[144] ==
     &quot;None of the above:Which of the following items have you personally done in the last year? Please select all that apply.&quot;
@@ -563,10 +561,16 @@ stopifnot(
     &quot;Other, prefer to specify:What is your race / ethnicity? Please select all that apply.&quot;
 )
 
+stopifnot(
+  colnames(df)[72] ==
+    &quot;None of the above:Which of the following items have you personally done in the last year? Please select all that apply.&quot; 
+)
+
 df &lt;- df %&gt;%
   rename(
     &quot;projects_done_technical.resp.none&quot; = 144,
-    &quot;race.resp.other_specify_freetext&quot; = 158
+    &quot;race.resp.other_specify_freetext&quot; = 158, 
+    &quot;projects_done_management.resp.none&quot; = 72
   )
 
 # replace original names with updated versions, matching on old names
@@ -768,6 +772,10 @@ df &lt;- df %&gt;%
     )
   )</code></pre>
 </div>
+<div id="gender-x-race" class="section level2">
+<h2>Gender x Race</h2>
+<pre class="r"><code>df &lt;- df %&gt;% mutate(gender_race = paste(race_bin2, gender_bin, sep = &quot; | &quot;))</code></pre>
+</div>
 <div id="salary" class="section level2">
 <h2>Salary</h2>
 <pre class="r"><code>## Salary
@@ -911,7 +919,7 @@ googledrive::drive_upload(
 <pre><code>## Local file:
 ##   * /Users/maheletfekade/Documents/salary_survey/git/progdatajobspublic/2020ishSalarySurvey/data/survey_responses.csv
 ## uploaded into Drive file:
-##   * 1urZL8JCFdjFDTARpClQbCtX41NV3TSML: 1Wa4j4U3mbuiI72JdQHCYNQR5d_KjS5ID
+##   * 1urZL8JCFdjFDTARpClQbCtX41NV3TSML: 1iWNIBwD51cHrbqdL8eHtFR0B8b6CcaGL
 ## with MIME type:
 ##   * text/csv</code></pre>
 </div>
