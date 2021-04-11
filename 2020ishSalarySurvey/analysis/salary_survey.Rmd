@@ -1151,28 +1151,37 @@ salary_cross(x = df,
 ```{r, message = FALSE, echo = FALSE }
 
 df2 <- df %>%
-  select(gender_bin, compensation, years_worked_political_data, years_worked_political, years_worked_data) %>%
-  filter(
+  select(
+    gender_bin, 
+    compensation, 
+    years_worked_political_data, 
+    years_worked_political, 
+    years_worked_data, 
+    years_worked_total,
+    work_hist_eligible
+  ) %>% filter(
+    work_hist_eligible == TRUE, 
     !is.na(gender_bin),
-    !is.na( compensation),
+    !is.na(compensation),
     !is.na(years_worked_political_data),
     !is.na(years_worked_political),
     !is.na(years_worked_data),
-    gender_bin != 'Prefer not to answer') %>%
+    gender_bin != 'Prefer not to answer'
+  ) %>%
   transmute(
    variable = gender_bin,
-    salary_total =  compensation,
-    work_pol_data = years_worked_political_data,
-    work_pol_nodata = years_worked_political,
-    work_nopol_data = years_worked_data) %>%
-  mutate(totalyears = rowSums(.[3:5])) %>%
+   salary_total =  compensation,
+   work_pol_data = years_worked_political_data,
+   work_pol_nodata = years_worked_political,
+   work_nopol_data = years_worked_data, 
+   totalyears = years_worked_total, 
+   work_hist_eligible = work_hist_eligible
+  ) %>%
   arrange(desc(salary_total))
 
-# rm outlier
-df2 <- df2[df2$totalyears <= 35,]
-
 ## creates chart
-ggplot(df2, aes(x = totalyears, y = salary_total, color = variable)) +
+df2 %>% 
+  ggplot(aes(x = totalyears, y = salary_total, color = variable)) +
   geom_jitter(stat = "identity", width = 2, height = 2) +
   geom_smooth(method = "loess", se = FALSE) +
   theme_light()+
