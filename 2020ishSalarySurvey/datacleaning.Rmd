@@ -10,6 +10,7 @@ rm(list = ls())
 
 library(dplyr)
 library(janitor)
+library(ggplot2)
 
 # print working dir for reference
 here::here()
@@ -476,6 +477,112 @@ df <- df %>% distinct(response_id, .keep_all = TRUE)
 * Years of experience questions -- is the sum > 30, are all the answers the same number >> write to NA
 * Outliers in Salary, 0 >> change to NA
 * Among professional development Qs, did people only say that they had done PD activities that they had access to in q1?
+
+## Clean Years of Experience 
+
+Create helper columns 
+
+```{r}
+cols <- c(
+  "years_worked_political_data", 
+  "years_worked_data", 
+  "years_worked_political"
+)
+
+# sum cols to get total years worked
+df$years_worked_total <- df$years_worked_data + 
+  df$years_worked_political + 
+  df$years_worked_political_data
+
+# check to see if all three columns have the same non-NA value 
+df <- df %>% mutate(
+  work_hist_duped = ifelse(
+    any(is.na(c_across(cols = cols))), 0, 
+    length(unique(c_across(cols = cols))))
+)
+
+# check to see whether some one has "worked" more years that physically possible
+df$age_minus_work <- df$age - df$years_worked_total
+```
+
+
+Graph data to visually check for outliers 
+```{r}
+ggplot(df) +
+  aes(x = "", y = years_worked_total) +
+  geom_boxplot(fill = "#0c4c8a") +
+  theme_minimal()
+
+ggplot(df) +
+  aes(x = years_worked_total) +
+  geom_histogram(fill = "#0c4c8a") +
+  theme_minimal()
+
+ggplot(df) +
+  aes(x = "", y = years_worked_political_data) +
+  geom_boxplot(fill = "#0c4c8a") +
+  theme_minimal()
+
+ggplot(df) +
+  aes(x = "", y = years_worked_political) +
+  geom_boxplot(fill = "#0c4c8a") +
+  theme_minimal()
+
+ggplot(df) +
+  aes(x = "", y = years_worked_data) +
+  geom_boxplot(fill = "#0c4c8a") +
+  theme_minimal()
+
+# print outliers 
+sort(boxplot.stats(df$years_worked_total, coef = 2)$out)
+sort(boxplot.stats(df$years_worked_political_data, coef = 2)$out)
+sort(boxplot.stats(df$years_worked_political, coef = 2)$out)
+sort(boxplot.stats(df$years_worked_data, coef = 2)$out)
+```
+
+```{r}
+# Mark a whole row as NA if: 
+# All three values are the same 
+# Any of three values is an outlier with coef = 2x IQR
+# age_minus_work < 18
+# years_worked_political_data = years_worked_political, and both are above 3
+
+df <- df %>% mutate(
+  work_hist_eligible = 
+    # find all the non-eligible rows, then flip so eligible = TRUE
+    !(
+      # if any of these conditions are met, the row should not be used
+      any(is.na(c_across(cols = cols))) |
+        # all columns have the same value 
+        work_hist_duped == 1 | 
+        # more years worked than is reasonable 
+        age_minus_work < 18 | 
+        # years worked is an extreme outlier
+        years_worked_total %in% boxplot.stats(df$years_worked_total, coef = 2)$out | 
+        years_worked_data %in% boxplot.stats(df$years_worked_data, coef = 3)$out | 
+        years_worked_political_data %in% boxplot.stats(df$years_worked_political_data, coef = 3)$out | 
+        years_worked_political %in% boxplot.stats(df$years_worked_political, coef = 3)$out | 
+        # years worked in politics and in data listed as the same not-small number
+        (identical(years_worked_political_data, years_worked_political) &
+           years_worked_political_data > 4
+        ) 
+    )
+)
+
+# visually check data to see it seems reasonable 
+outliers_all <- df %>% 
+  filter(work_hist_eligible == FALSE) %>% 
+  select(
+    response_id, 
+    status,
+    starts_with("years_worked"), 
+    work_hist_duped, 
+    age_minus_work, 
+    compensation
+  )
+```
+
+
 
 ## Missingness
 
