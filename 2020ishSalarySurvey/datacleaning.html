@@ -875,11 +875,6 @@ df &lt;- df %&gt;%
 </div>
 <div id="data-validation-and-attention-checks" class="section level1">
 <h1>Data Validation and Attention Checks</h1>
-<ul>
-<li>Years of experience questions – is the sum &gt; 30, are all the answers the same number &gt;&gt; write to NA</li>
-<li>Outliers in Salary, 0 &gt;&gt; change to NA</li>
-<li>Among professional development Qs, did people only say that they had done PD activities that they had access to in q1?</li>
-</ul>
 <div id="clean-years-of-experience" class="section level2">
 <h2>Clean Years of Experience</h2>
 <p>Create helper columns</p>
@@ -987,6 +982,85 @@ outliers_all &lt;- df %&gt;%
     compensation
   )</code></pre>
 </div>
+<div id="professional-development" class="section level2">
+<h2>Professional Development</h2>
+<p>Did people only use professional development that they said they had access to?</p>
+<pre class="r"><code># Create Helper Objects
+pd_df &lt;- df %&gt;% 
+  select(
+    starts_with(&quot;prof_dev&quot;), 
+    - prof_dev_yesno, 
+    - ends_with(&quot;not_used&quot;)
+  )
+pd_types &lt;- stringr::str_split_fixed(colnames(pd_df), &quot;.resp.&quot;, 2)[, 2] %&gt;% 
+  unique()
+
+df &lt;- df %&gt;% ungroup()</code></pre>
+<pre class="r"><code># Quick Checks 
+# First Q validation worked correctly, only people who have PD overall used it
+tmp2 &lt;- df %&gt;% 
+  group_by(prof_dev_yesno) %&gt;%
+  summarise( 
+    n = n(), 
+    across(starts_with(&quot;prof_dev&quot;), ~ sum(., na.rm = TRUE))
+  )</code></pre>
+<pre><code>## `summarise()` ungrouping output (override with `.groups` argument)</code></pre>
+<pre class="r"><code># overall, there is no category where more people used PD than said they had it
+tmp3 &lt;- df %&gt;% 
+  summarise(
+    across(starts_with(&quot;prof_dev_available&quot;), ~sum(.x, na.rm = TRUE))
+  ) %&gt;%
+  tidyr::pivot_longer(cols = everything()) %&gt;%
+  transmute(
+    name = stringr::str_split_fixed(name, &quot;.resp.&quot;, 2)[, 2], 
+    n_available = value
+  )
+
+tmp4 &lt;- df %&gt;% 
+  summarise(
+    across(starts_with(&quot;prof_dev_used&quot;), ~ sum(., na.rm = TRUE))) %&gt;%
+  tidyr::pivot_longer(cols = everything()) %&gt;%
+  transmute(
+    name = stringr::str_split_fixed(name, &quot;.resp.&quot;, 2)[, 2], 
+    n_used = value
+  ) %&gt;%
+  full_join(tmp3, by = &quot;name&quot;)</code></pre>
+<pre class="r"><code>recode_pd &lt;- function(dat, pd_type){
+  
+  available &lt;- paste0(&quot;prof_dev_available.resp.&quot;, {{pd_type}})
+  used &lt;- paste0(&quot;prof_dev_used.resp.&quot;, {{pd_type}})
+  
+  errs &lt;- dat %&gt;% filter(
+    is.na(.data[[available]]), 
+    .data[[used]] == TRUE
+  ) %&gt;% nrow()
+  
+  print(paste(&quot;There are&quot;, errs, &quot;errors for&quot;, pd_type, &quot;. Cleaning Now!&quot;))
+
+  dat &lt;- dat %&gt;% mutate(
+    tmp = case_when(
+      is.na(dat[[available]]) ~ NA,
+      dat[[used]] == TRUE ~ TRUE,
+      is.na(dat[[used]]) ~ FALSE
+  ))
+
+  return(dat$tmp)
+}
+
+for(i in seq_along(pd_types)) {
+  
+  used &lt;- paste0(&quot;prof_dev_used.resp.&quot;, pd_types[i])
+  df[[used]] &lt;- recode_pd(df, pd_types[i]) 
+}</code></pre>
+<pre><code>## [1] &quot;There are 3 errors for conference_present . Cleaning Now!&quot;
+## [1] &quot;There are 4 errors for conference_attend . Cleaning Now!&quot;
+## [1] &quot;There are 1 errors for certification . Cleaning Now!&quot;
+## [1] &quot;There are 5 errors for trainings_offsite . Cleaning Now!&quot;
+## [1] &quot;There are 1 errors for buy_materials . Cleaning Now!&quot;
+## [1] &quot;There are 10 errors for trainings_small_group . Cleaning Now!&quot;
+## [1] &quot;There are 2 errors for tution_reimbursement . Cleaning Now!&quot;
+## [1] &quot;There are 8 errors for other . Cleaning Now!&quot;</code></pre>
+</div>
 <div id="missingness" class="section level2">
 <h2>Missingness</h2>
 <p>Create variable for the last question that someone answered to see dropoff/ flows</p>
@@ -1024,24 +1098,18 @@ readr::write_csv(
 )</code></pre>
 <pre class="r"><code># upload results file to google drive, since we can&#39;t put it in git
 # and the google sheets upload was causing issues/ misaligned columns
-
-googledrive::drive_upload(
-  here::here(&quot;data&quot;, &quot;survey_responses.csv&quot;),
-  # comes from a file ID to replace
-  path = &quot;1urZL8JCFdjFDTARpClQbCtX41NV3TSML&quot;
-)</code></pre>
+file &lt;- googledrive::drive_find(&quot;survey_responses_clean.csv&quot;, n_max = 1)</code></pre>
 <pre><code>## Using an auto-discovered, cached token.
 ## To suppress this message, modify your code or options to clearly consent to the use of a cached token.
 ## See gargle&#39;s &quot;Non-interactive auth&quot; vignette for more details:
 ## https://gargle.r-lib.org/articles/non-interactive-auth.html</code></pre>
 <pre><code>## The googledrive package is using a cached token for olivia.mae.robinson@gmail.com.</code></pre>
-<pre><code>## Auto-refreshing stale OAuth token.</code></pre>
-<pre><code>## Local file:
-##   * /Users/oliviarobinson/Documents/progdatajobspublic/2020ishSalarySurvey/data/survey_responses.csv
-## uploaded into Drive file:
-##   * 1urZL8JCFdjFDTARpClQbCtX41NV3TSML: 1WDbj32j_4A6kTthPyEooPR0RhVKdyG3t
-## with MIME type:
-##   * text/csv</code></pre>
+<pre class="r"><code>googledrive::drive_update(
+  googledrive::as_id(file), 
+  here::here(&quot;data&quot;, &quot;survey_responses.csv&quot;),
+  )</code></pre>
+<pre><code>## File updated:
+##   * survey_responses_clean.csv: 1urZL8JCFdjFDTARpClQbCtX41NV3TSML</code></pre>
 </div>
 
 
