@@ -379,6 +379,7 @@ df &lt;- googlesheets4::read_sheet(url, sheet = &#39;2/22: Data&#39;)</code></pr
 ## See gargle&#39;s &quot;Non-interactive auth&quot; vignette for more details:
 ## https://gargle.r-lib.org/articles/non-interactive-auth.html</code></pre>
 <pre><code>## The googlesheets4 package is using a cached token for olivia.mae.robinson@gmail.com.</code></pre>
+<pre><code>## Auto-refreshing stale OAuth token.</code></pre>
 <pre><code>## Reading from &quot;2/7 Survey Responses &quot;</code></pre>
 <pre><code>## Range &quot;&#39;2/22: Data&#39;&quot;</code></pre>
 <pre><code>## New names:
@@ -1104,6 +1105,7 @@ file &lt;- googledrive::drive_find(&quot;survey_responses_clean.csv&quot;, n_max
 ## See gargle&#39;s &quot;Non-interactive auth&quot; vignette for more details:
 ## https://gargle.r-lib.org/articles/non-interactive-auth.html</code></pre>
 <pre><code>## The googledrive package is using a cached token for olivia.mae.robinson@gmail.com.</code></pre>
+<pre><code>## Auto-refreshing stale OAuth token.</code></pre>
 <pre class="r"><code>googledrive::drive_update(
   googledrive::as_id(file), 
   here::here(&quot;data&quot;, &quot;survey_responses.csv&quot;),
