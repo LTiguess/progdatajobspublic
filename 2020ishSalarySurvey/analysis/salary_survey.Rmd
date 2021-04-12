@@ -10,14 +10,12 @@ output:
       collapsed: true
 ---
 
-
 # Executive Summary 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 rm(list=ls())
 ```
-
 
 ```{r, message = FALSE,echo = FALSE}
 # Load Packages
@@ -65,54 +63,31 @@ func_files <- list.files(
   path = here::here("analysis", "functions"), full.names = TRUE
 )
 sapply(func_files, source)
-
 ```
 
 ```{r, message = FALSE, echo = FALSE }
 # Subset to Survey Universe
 df <- df %>%
-  filter(eligible == TRUE)
-
-# Salary
-## TODO: Figure out how to deal with outlier salary values
-
-# Years of Experience
-## TODO: Figure out how to deal with outlier years of experience
-df$years_worked_data[!is.na(df$years_worked_data) &
-                       df$years_worked_data >= 35
-                       ] <- NA
-
-df$years_worked_political_data[!is.na(df$years_worked_data) &
-                       df$years_worked_political_data >= 35
-                       ] <- NA
-
-df$years_worked_political[!is.na(df$years_worked_data) &
-                       df$years_worked_political >= 35
-                       ] <- NA
-
-
-# remove people who didnt complete the survey
-df <- df %>% filter(status == "Complete")
-
-# remove people who enter a salary of 0 
-df <- df %>% filter(compensation != 0)
+  filter(
+    eligible == TRUE, 
+    status == "Complete", 
+    compensation != 0
+  )
 ```
-
-
-
 
 # Respondent Charateristics
 
 ## Demographic Information {.tabset}
 
-
 ### Gender
 
 **What is your gender identity?**
 
-
 ```{r, echo=FALSE}
-tt(df$gender, order_prop = T)
+tt(df$gender, 
+   order_prop = T, 
+   last_ord = "Prefer not to answer"
+)
 ```
 
 ### Race / Ethnicity
@@ -122,10 +97,8 @@ tt(df$gender, order_prop = T)
 tt(df$race_bin,
    order_prop = T,
    last_ord = "Missing"
-   )
+)
 ```
-
-
 
 ### Immigration Status
 **How long have you or your family lived in the United States?**
@@ -146,8 +119,6 @@ tt(df$immigration,
 ### Age
 **2020 - What is your year (YYYY) of birth?**
 
-
-
 ```{r, message = FALSE, echo = FALSE }
 tt(df$age_bin, order_prop = F)
 ```
@@ -155,12 +126,11 @@ tt(df$age_bin, order_prop = F)
 ```{r, message = FALSE, echo = FALSE }
 median_hist(df$age,
             x_label = "Age",
-            med_label = "The median age is",
+            med_label = "Median Age:",
             med_label_x_cord = median(df$age, na.rm = TRUE) + 7,
             med_label_y_cord = 50, 
-            color_hist = "#440154FF"
-            )
-# + geom_histogram(fill = c("red"))
+            color_hist = "#21908CFF"
+)
 ```
 
 ### Sexuality
@@ -180,8 +150,6 @@ tt(df$disabled,
    order_prop = F, 
    lvls = c("Yes, I have or previously had a disability", "No, I don't have a disability", "Other", "Prefer not to answer"))
 ```
-
-
 
 ### Military Status
 **Are you a member of the military or a veteran?**
@@ -232,7 +200,11 @@ low_num_areas <- df %>%
 df$geo_name_bin <- df$geo_name
 df$geo_name_bin[df$geo_name %in% low_num_areas$geo_name] <- "Other (less than 5 people in metro area)"
 
-tt(df$geo_name_bin, order_prop = T, last_ord = c("Other (less than 5 in metro area)", "Missing"))
+tt(
+  df$geo_name_bin, 
+  order_prop = T, 
+  last_ord = c("Other (less than 5 people in metro area)", "Missing")
+)
 ```
 
 
@@ -242,12 +214,12 @@ tt(df$geo_name_bin, order_prop = T, last_ord = c("Other (less than 5 in metro ar
 
 ```{r, message = FALSE, echo = FALSE }
 median_hist(
-  df$years_worked_political_data,
-  x_label = "Years in Politics & Data",
-  med_label = "The median years of experience is",
+  df$years_worked_political_data[df$work_hist_eligible == TRUE],
+  x_label = "Years Working in Political Data",
+  med_label = "Median Years of Experience:",
   med_label_x_cord = median(df$years_worked_political_data, na.rm = TRUE) + 7,
   med_label_y_cord = 75, 
-  color_hist = "#932667FF")
+  color_hist = "#21908CFF")
 ```
 
 ### Politics, Not Data
@@ -255,9 +227,9 @@ median_hist(
 
 ```{r, message = FALSE, echo = FALSE }
 median_hist(
-  df$years_worked_political,
+  df$years_worked_political[df$work_hist_eligible == TRUE],
   x_label = "Years in Politics But Not Data",
-  med_label = "The median years of experience is",
+  med_label = "Median Years of Experience:",
   med_label_x_cord = median(df$years_worked_political, na.rm = TRUE) + 8,
   med_label_y_cord = 75, 
   color_hist = "#DD513AFF"
@@ -268,11 +240,11 @@ median_hist(
 ### Data, Not Politics
 **How many years of work experience do you have in data, analytics, and technology but not in progressive politics (i.e., exclude any years worked in progressive politics)?**
 ```{r, message = FALSE, echo = FALSE }
-median_hist(df$years_worked_data,
+median_hist(df$years_worked_data[df$work_hist_eligible == TRUE],
             x_label = "Years in Data But Not Politics",
-            med_label = "The median years of experience is",
+            med_label = "Median Years of Experience:",
             med_label_x_cord = median(df$years_worked_data, na.rm = TRUE) + 10,
-            med_label_y_cord = 50, 
+            med_label_y_cord = 75, 
             color_hist = "#FCA50AFF"
   )
 ```
@@ -281,18 +253,11 @@ median_hist(df$years_worked_data,
 ### Total
 
 ```{r, message = FALSE, echo = FALSE }
-total_work_experience <- df %>%
-  select(years_worked_political_data,
-         years_worked_political,
-         years_worked_data) %>%
-  mutate(sum = rowSums(.[1:3]))%>%
-  filter(!is.na(sum))
-
 median_hist(
-  total_work_experience$sum,
+  df$years_worked_total[df$work_hist_eligible == TRUE],
   x_label = "Total Years",
-  med_label = "The median years of experience is",
-  med_label_x_cord = median(total_work_experience$sum, na.rm = TRUE) + 17,
+  med_label = "Median Years of Experience:",
+  med_label_x_cord = median(df$years_worked_total, na.rm = TRUE) + 7,
   med_label_y_cord = 50, 
   color_hist = "#BB3754FF"
   )
@@ -306,8 +271,6 @@ median_hist(
 mult_resp(df, "employment_status_jan_21",  order_prop = T)
 ```
 
-
-
 ### During 2020 election cycle
 **What was your employment status during the 2020 election cycle?**
 ```{r, message = FALSE, echo = FALSE }
@@ -317,10 +280,11 @@ mult_resp(df, "employment_status_cycle_20",  order_prop = T)
 ### Employed in 2020 (full/part time) --> Jan 2021 Employment Status 
 **REMOVE**
 ```{r, message = FALSE, echo = FALSE }
-mult_resp(df %>% filter(employment_status_cycle_20.resp.full_time == TRUE |
-                          employment_status_cycle_20.resp.part_time == TRUE),
-          "employment_status_jan_21",
-          order_prop = T)
+mult_resp(
+  df %>% filter(employment_status_cycle_20.resp.full_time == TRUE |
+                  employment_status_cycle_20.resp.part_time == TRUE),
+  "employment_status_jan_21",
+  order_prop = T)
 ```
 
 
@@ -330,13 +294,11 @@ mult_resp(df %>% filter(employment_status_cycle_20.resp.full_time == TRUE |
 * Is the primary focus (>40% of resources) of your **team** data, analytics, or technology?
 * Is the primary focus (>40% of time) of your **role** data, analytics or technology?
 
-
-
 ```{r, message = FALSE, echo = FALSE }
 # make a df of just the columns/values we are interested in 
 
 tmp <- df %>%
-  select(data_40_org, data_40_team, data_40_role) %>%
+  select(starts_with("data_40")) %>%
   filter(!is.na(data_40_org), !is.na(data_40_team),!is.na(data_40_role))
 
 # reshape the df
@@ -351,7 +313,7 @@ plot_data <- tmp2 %>%
   mutate(pct = n /sum(n)) %>%
   # create label for bar plot
   mutate(bar_label =  paste0(
-     sprintf("%.1f%%", round(100 * pct)), " (n = ", n, ")")) %>%
+     sprintf("%.1d%%", round(100 * pct)), " Yes \n (n = ", n, ")")) %>%
   # for the "no" values make the bar_label empty string 
   mutate(bar_label= ifelse(value == "No", " ", bar_label))%>%
   # rename values in variable column so it easier to plot
@@ -371,7 +333,7 @@ p <- ggplot(plot_data, aes(x = variable, y = pct, fill = value)) +
   geom_col(width = 0.7) +
   coord_flip() +
   scale_fill_viridis_d() +
-  theme_bw() +
+  theme_minimal() +
   # remove x and y axis label
    theme(axis.title.x = element_blank(),
          axis.title.y = element_blank()
@@ -388,8 +350,6 @@ p <- ggplot(plot_data, aes(x = variable, y = pct, fill = value)) +
 p
 
 ```
-
-
 
 # Job Characteristics
 ## Organization Type
@@ -505,7 +465,8 @@ cat_cross(x = df,
 
 
 ### By Gender x Race (Binned)
-TODO: Figure out why proportion bars for 'POC/Other | Cis man (n = 85)' and 'White | Non-Cis man (n = 214)' are off. Probably beccause NA values. 
+TODO: Figure out why proportion bars for 'POC/Other | Cis man (n = 85)' and 'White | Non-Cis man (n = 214)' are off. Probably beccause NA values.
+Olivia note 4/11 -- this seems to be fixed with my edit to the cat_cross.R function, not sure why yet 
 ```{r, message = FALSE, echo = FALSE }
 cat_cross(x = df, 
   question = seniority_level, 
@@ -666,15 +627,17 @@ cat_cross(x = df,
 x <- df$perc_time_coding * 100
 
 plot <- ggplot(
-    as.data.frame(x[!is.na(x)]),
-      aes(
-        x = x[!is.na(x)])) +
-      geom_bar(stat = "count", fill = "#440154FF" ) +
-      xlab("% of Time Conducting Analysis or Writing Code") +
-      ylab("Count") + theme_bw() 
-   
-plot
+  as.data.frame(x[!is.na(x)]),
+  aes(
+    x = x[!is.na(x)])) +
+  geom_bar(
+    stat = "count",
+    fill = "#440154FF") +
+  scale_x_binned(n.breaks = 6) + 
+  xlab("% of Time Conducting Analysis or Writing Code") +
+  ylab("Count") + theme_minimal() 
 
+plot
 ```
 
 ### By Seniority
@@ -732,10 +695,11 @@ tmp <- df %>%
   # Add n-size to seniority_level label
   mutate(job_team_label = paste0(job_team_function, " (N = ", job_team_n, ")")) %>%
   # factor the label column in alphabetical order
-  mutate(job_team_label = factor(job_team_label,
-                                        levels =
-                                        unique(job_team_label[order(job_team_label, decreasing = TRUE)]),
-                                  ordered = TRUE))
+  mutate(job_team_label = factor(
+    job_team_label,
+    levels =
+      unique(job_team_label[order(job_team_label, decreasing = TRUE)]),
+    ordered = TRUE))
 
 # plot the density plot
 ggplot(tmp, aes(x = perc_time_coding * 100,
@@ -750,11 +714,8 @@ ggplot(tmp, aes(x = perc_time_coding * 100,
 ```
 
 
-
-
-
 # Skills + Tools
-
+Olivia TODO
 
 ## Tools {.tabset}
 
@@ -767,11 +728,9 @@ https://stackoverflow.com/questions/43520318/how-to-use-percentage-as-label-in-s
 * **Intermediate**: You feel comfortable using this tool on your own
 * **Advanced**: You are at home using this tool, are comfortable teaching or QCing others, or could lead a training on this topic
 
-
 #### Skill Level 
 
 This graph displays the full distribution of responses to skill level. Responses are ordered by the proportion of respondents who rate themselves as having intermediate or advanced skills.
-
 
 ```{r, message = FALSE, echo = FALSE }
 # make a df of just the columns/values we are interested in
@@ -782,36 +741,53 @@ tmp <- df %>%
 tmp$category <- row.names(tmp)
 tmp2 <- reshape2::melt(tmp, id.vars = "category")
 
-
 plot_data <- tmp2 %>%
-  # for each question, get percents of people who answered never used, intro, novice, inetermediate, advanced
+  # for each question, get percents of people who answered 
+  # never used, intro, novice, intermediate, advanced
   count(variable, value) %>%
   group_by(variable) %>%
-  mutate(pct = n /sum(n), 
-  # create label for bar plot
-  bar_label =  scales::label_percent(accuracy = 1)(pct), 
- # value = factor(value, levels = c("Never used this before", "Introductory", "Novice", "Intermediate", "Advanced"))) %>% 
-  value = factor(value, levels = c( "Advanced", "Intermediate",  "Novice", "Introductory", "Never used this before"))) %>%
-  # add cleanned verison of responses 
-   left_join(
-       col_names,
-       by = c("variable" = "col_name_final"))
+  mutate(
+    pct = n /sum(n), 
+    # create label for bar plot
+    bar_label =  ifelse(
+      pct < .05, "", 
+      scales::label_percent(accuracy = 1)(pct)), 
+    value = factor(
+      value, 
+      levels = c("Advanced", "Intermediate",  "Novice", 
+                 "Introductory", "Never used this before"))
+  ) %>%
+  # add cleaned version of responses 
+  left_join(
+    col_names,
+    by = c("variable" = "col_name_final")
+  ) 
 
-# rename values in variable column so it easier to plot
+order_helper <- plot_data %>%
+  filter(value == "Never used this before") %>%
+  unique() %>% 
+  arrange(desc(pct)) %>%
+  select(variable)
+order_helper$order <- 1:nrow(order_helper)
 
-  # factor columns so it follows a particular ordering
-  
+plot_data <- plot_data %>% 
+  left_join(order_helper, by = "variable")
 
-
-p <- ggplot(plot_data, aes(x = response_name, y = pct, fill = value)) +
+# make plot
+p <- ggplot(
+  plot_data, 
+  aes(
+    x = reorder(response_name, order),
+    y = pct, fill = value)) +
   geom_col(width = 0.7) +
   coord_flip() +
   scale_fill_viridis_d() +
-  theme_bw() +
+  theme_minimal() +
   # remove x and y axis label
-   theme(axis.title.x = element_blank(),
-         axis.title.y = element_blank()
-         ) +
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) +
   # make the x-axis into percents
   scale_y_continuous(labels = scales::percent) +
   # add labels
@@ -820,7 +796,7 @@ p <- ggplot(plot_data, aes(x = response_name, y = pct, fill = value)) +
   # edit legend: remove the key and reverse the order of the values
   theme(legend.title = element_blank(), 
         legend.position = "bottom") +
-   guides(fill = guide_legend(reverse = TRUE))
+  guides(fill = guide_legend(reverse = TRUE))
 
 p
 ```
@@ -887,7 +863,6 @@ mult_resp(df, "skills_learning_method", order_prop = T)
 ```{r}
 df$work_compenents_freetext[!is.na(df$work_compenents_freetext)] %>% dplyr::tibble()
 ```
-
 
 # Salary Overview
 
@@ -977,7 +952,7 @@ cat_cross(x = df,
       rename(' ' = question) %>%
       formattable::formattable(list(
         `All\n(n = 608)` = formattable::proportion_bar(), 
-        `POC\n(n = 212)` = formattable::proportion_bar(), 
+        `POC/Other\n(n = 212)` = formattable::proportion_bar(), 
         `White\n(n = 390)` = formattable::proportion_bar()), 
         align = c('l', 'r', 'r', 'r', 'r'))
 
@@ -1062,7 +1037,7 @@ mult_resp_cross( x = df %>% # remove people who didn't answer yes to the previou
   question_prefix = "negotiation_result", 
   cross_var = gender_race
             ) %>%
-  # add some nice formatting 
+  # add some nice formatting
       rename(' ' = response_name) %>%
       formattable::formattable(list(
         `All\n(n = 219)` = formattable::proportion_bar(), 
@@ -1092,7 +1067,7 @@ tt(
 ### Available 
 **What types of employer-funded professional development opportunities are available to you? Please select all that apply.** [only asked to respondents who are offered career development opportunities]
 ```{r, message = FALSE, echo = FALSE }
-mult_resp(df %>% filter(prof_dev_yesno == "Yes"),
+r1 <- mult_resp(df %>% filter(prof_dev_yesno == "Yes"),
           "prof_dev_available",
           order_prop = T)
 ```
@@ -1102,17 +1077,20 @@ mult_resp(df %>% filter(prof_dev_yesno == "Yes"),
 ### Used 
 **Which of these professional development opportunities have you used? Please select all that apply.** [only asked to respondents who are offered career development opportunities]
 
-
-TODO: Add logic to valid response. People should only select values that they selected in prof_dev_available.
-
 ```{r, message = FALSE, echo = FALSE }
-mult_resp(df %>% filter(prof_dev_yesno == "Yes"),
+
+# these values are now validated by Olivia as of 4/11
+mult_resp(df ,
           "prof_dev_used", 
-          order_prop = T)
+          order_prop = T, 
+          last_ord = "Haven't used any")
 ```
 
 
 ### Free Text 
+
+TO DO condense options in free text
+
 **Thinking about your career path and focus, which one specific skill or tool do you most want to learn?**
 ```{r}
 # order by count
@@ -1124,8 +1102,6 @@ df$skill_to_learn[!is.na(df$skill_to_learn)] %>% dplyr::tibble()
 ```
 
 
-TODO
-
 # Salary Crosstabs 
 
 In all of the following crosstabs, salary information is excluded for groups with fewer than 5 people.
@@ -1135,312 +1111,133 @@ In all of the following crosstabs, salary information is excluded for groups wit
 ### Gender
 
 ```{r, message = FALSE, echo = FALSE }
+var <- substitute(gender_bin)
 
 salary_cross(x = df,
-             variable = gender,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
              order_by = "n")
 
-
-
-
-```
-
-```{r, message = FALSE, echo = FALSE }
-
-df2 <- df %>%
-  select(
-    gender_bin, 
-    compensation, 
-    years_worked_political_data, 
-    years_worked_political, 
-    years_worked_data, 
-    years_worked_total,
-    work_hist_eligible
-  ) %>% filter(
-    work_hist_eligible == TRUE, 
-    !is.na(gender_bin),
-    !is.na(compensation),
-    !is.na(years_worked_political_data),
-    !is.na(years_worked_political),
-    !is.na(years_worked_data),
-    gender_bin != 'Prefer not to answer'
-  ) %>%
-  transmute(
-   variable = gender_bin,
-   salary_total =  compensation,
-   work_pol_data = years_worked_political_data,
-   work_pol_nodata = years_worked_political,
-   work_nopol_data = years_worked_data, 
-   totalyears = years_worked_total, 
-   work_hist_eligible = work_hist_eligible
-  ) %>%
-  arrange(desc(salary_total))
-
-## creates chart
-df2 %>% 
-  ggplot(aes(x = totalyears, y = salary_total, color = variable)) +
-  geom_jitter(stat = "identity", width = 2, height = 2) +
-  geom_smooth(method = "loess", se = FALSE) +
-  theme_light()+
-  theme(legend.title=element_blank())+
-  xlab("Years of Experience")+
-  ylab("Salary")
-
+plot_salary(df, var)
 ```
 
 ### Gender (Binned)
 
 ```{r, message = FALSE, echo = FALSE }
+var <- substitute(gender_cis)
 
 salary_cross(x = df,
-             variable = gender_cis,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
              order_by = "n")
 
-
-
-
+plot_salary(df, var)
 ```
 
-
-```{r, message = FALSE, echo = FALSE }
-
-df2 <- df %>%
-  select(gender_cis, compensation, years_worked_political_data, years_worked_political, years_worked_data) %>%
-  filter(
-    !is.na(gender_cis),
-    !is.na( compensation),
-    !is.na(years_worked_political_data),
-    !is.na(years_worked_political),
-    !is.na(years_worked_data),
-    gender_cis != 'Prefer not to answer') %>%
-  transmute(
-   variable = gender_cis,
-    salary_total =  compensation,
-    work_pol_data = years_worked_political_data,
-    work_pol_nodata = years_worked_political,
-    work_nopol_data = years_worked_data) %>%
-  mutate(totalyears = rowSums(.[3:5])) %>%
-  arrange(desc(salary_total))
-
-# rm outlier
-df2 <- df2[df2$totalyears <= 35,]
-
-## creates chart
-ggplot(df2, aes(x = totalyears, y = salary_total, color = variable)) +
-  geom_jitter(stat = "identity", width = 2, height = 2) +
-  geom_smooth(method = "loess", se = FALSE) +
-  theme_light()+
-  theme(legend.title=element_blank())+
-  xlab("Years of Experience")+
-  ylab("Salary")
-
-```
 
 ### Race / Ethnicity
 
 ```{r, message = FALSE, echo = FALSE }
+var <- substitute(race_bin)
 
-salary_cross(x = df, 
-             variable = race_bin,
+salary_cross(x = df,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
-             order_by = "n", # n, levels, alpha
-             last_ord = c("Other/Prefer Not to Say/Missing")
-             ) 
+             order_by = "n", 
+             last_ord = c("Other/Prefer Not to Say/Missing"))
+
 ```
 
 ### Race / Ethnicity (Binned)
 
 ```{r, message = FALSE, echo = FALSE }
+var <- substitute(race_bin2)
 
-salary_cross(x = df, 
-             variable = race_bin2,
+salary_cross(x = df,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
-             order_by = "n", # n, levels, alpha
-             last_ord = c("Prefer not to answer")
-             ) 
+             order_by = "n",
+             last_ord = c("Prefer not to answer"))
+
+plot_salary(df, var)
 ```
-
-```{r, message = FALSE, echo = FALSE }
-
-df2 <- df %>%
-  select(race_bin2, compensation, years_worked_political_data, years_worked_political, years_worked_data) %>%
-  filter(
-    !is.na(race_bin2),
-    !is.na( compensation),
-    !is.na(years_worked_political_data),
-    !is.na(years_worked_political),
-    !is.na(years_worked_data),
-    race_bin2 != 'Prefer not to answer') %>%
-  transmute(
-    race = race_bin2,
-    salary_total =  compensation,
-    work_pol_data = years_worked_political_data,
-    work_pol_nodata = years_worked_political,
-    work_nopol_data = years_worked_data) %>%
-  mutate(totalyears = rowSums(.[3:5])) %>%
-  arrange(desc(salary_total))
-
-# rm outlier
-df2 <- df2[df2$totalyears <= 35,]
-
-## creates chart
-ggplot(df2, aes(x = totalyears, y = salary_total, color = race)) +
-  geom_jitter(stat = "identity", width = 2, height = 2) +
-  geom_smooth(method = "loess", se = FALSE) +
-  theme_light()+
-  theme(legend.title=element_blank())+
-  xlab("Years of Experience")+
-  ylab("Salary")
-
-```
-
 
 ### Gender x Race / Ethnicity 
 
-
 ```{r, message = FALSE, echo = FALSE }
+var <- substitute(gender_race)
 
-salary_cross(x = df, 
-             variable = gender_race,
+salary_cross(x = df,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
-             order_by = "n", # n, levels, alpha
-             last_ord = c("Other/Prefer Not to Say/Missing")
-             ) 
+             order_by = "n",
+             last_ord = c("Prefer not to answer"))
 
+plot_salary(df, var)
 ```
-
-
-```{r, message = FALSE, echo = FALSE }
-
-df2 <- df %>%
-   mutate(gender_race = paste(race_bin2, gender_bin, sep = " | ")) %>%
-  select(gender_race, compensation, years_worked_political_data, years_worked_political, years_worked_data) %>%
-  filter(
-    !is.na( compensation),
-    !is.na(years_worked_political_data),
-    !is.na(years_worked_political),
-    !is.na(years_worked_data),
-    gender_race %in% c("POC/Other | Non-Cis man",
-                       "White | Non-Cis man",
-                       "POC/Other | Cis man", 
-                       "White | Cis man")) %>%
-  transmute(
-   variable = gender_race,
-    salary_total =  compensation,
-    work_pol_data = years_worked_political_data,
-    work_pol_nodata = years_worked_political,
-    work_nopol_data = years_worked_data) %>%
-  mutate(totalyears = rowSums(.[3:5])) %>%
-  arrange(desc(salary_total))
-
-# rm outlier
-df2 <- df2[df2$totalyears <= 35,]
-
-## creates chart
-ggplot(df2, aes(x = totalyears, y = salary_total, color = variable)) +
-  geom_jitter(stat = "identity", width = 2, height = 2) +
-  scale_color_viridis_d(option = "magma") +
-  geom_smooth(method = "loess", se = FALSE) +
-  theme(legend.title = element_blank())+
-  xlab("Years of Experience")+
-  ylab("Salary") +
-  theme_bw() 
-
-```
-
 
 ### Age
 
 ```{r, message = FALSE, echo = FALSE }
-salary_cross(x = df, 
-             variable = age_bin,
+
+var <- substitute(age_bin)
+
+salary_cross(x = df,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
-             order_by = "alpha", # mean, levels, alpha
-             last_ord = c("Other/Prefer Not to Say/Missing")
-             ) 
-
+             order_by = "alpha",
+             last_ord = c("Prefer not to answer"))
 
 ```
 
-
 ### Sexuality 
 ```{r, message = FALSE, echo = FALSE }
-salary_cross(x = df, 
-             variable = sexual_orientation,
+var <- substitute(sexual_orientation)
+
+salary_cross(x = df,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
-             order_by = "n", # n, levels, alpha
-             last_ord = c("Other/Prefer Not to Say/Missing")
-             ) 
-
+             order_by = "n",
+             last_ord = c("Prefer not to answer"))
 ```
 
 
 ### Sexuality (Binned)
 ```{r, message = FALSE, echo = FALSE }
-salary_cross(x = df, 
-             variable = sexual_orientation_bin,
+
+var <- substitute(sexual_orientation_bin)
+
+salary_cross(x = df,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
-             order_by = "n" # n, levels, alpha
-             ) 
+             order_by = "n",
+             last_ord = c("Prefer not to answer"))
 
-```
-
-```{r, message = FALSE, echo = FALSE }
-
-df2 <- df %>%
-  select(sexual_orientation_bin, compensation, years_worked_political_data, years_worked_political, years_worked_data) %>%
-  filter(
-    !is.na(sexual_orientation_bin),
-    !is.na( compensation),
-    !is.na(years_worked_political_data),
-    !is.na(years_worked_political),
-    !is.na(years_worked_data),
-    sexual_orientation_bin != 'Prefer not to answer') %>%
-  transmute(
-   variable = sexual_orientation_bin,
-    salary_total =  compensation,
-    work_pol_data = years_worked_political_data,
-    work_pol_nodata = years_worked_political,
-    work_nopol_data = years_worked_data) %>%
-  mutate(totalyears = rowSums(.[3:5])) %>%
-  arrange(desc(salary_total))
-
-# rm outlier
-df2 <- df2[df2$totalyears <= 35,]
-
-## creates chart
-ggplot(df2, aes(x = totalyears, y = salary_total, color = variable)) +
-  geom_jitter(stat = "identity", width = 2, height = 2) +
-  geom_smooth(method = "loess", se = FALSE) +
-  theme_light()+
-  theme(legend.title=element_blank())+
-  xlab("Years of Experience")+
-  ylab("Salary")
-
+plot_salary(df, var)
 ```
 
 ### Disability 
 ```{r, message = FALSE, echo = FALSE }
-salary_cross(x = df, 
-             variable = disabled,
+var <- substitute(disabled)
+
+salary_cross(x = df,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
@@ -1448,7 +1245,7 @@ salary_cross(x = df,
              lvls = c("Yes, I have or previously had a disability", 
                       "No, I don't have a disability", "Other"),
              last_ord = c("Prefer not to answer", "Missing")
-             ) 
+) 
 ```
 
 
@@ -1472,12 +1269,8 @@ salary_cross(x = df,
 
 ```
 
-
-
-
 ## Education 
 ```{r, message = FALSE, echo = FALSE }
-
 
 salary_cross(x = df, 
              variable = education_level,
@@ -1502,24 +1295,18 @@ salary_cross(x = df,
 ## Work Experience 
 
 ```{r, message = FALSE, echo = FALSE }
-salary_work <- df %>%
-  select( compensation, years_worked_political_data, years_worked_political, years_worked_data) %>%
-  filter(!is.na( compensation),
-         !is.na(years_worked_political_data),
-         !is.na(years_worked_political),
-         !is.na(years_worked_data)) %>%
-  transmute(
-    salary_total =  compensation,
-    work_pol_data = years_worked_political_data,
-    work_pol_nodata = years_worked_political,
-    work_nopol_data = years_worked_data) %>%
-  mutate(totalyears = rowSums(.[2:4])) %>%
-  arrange(desc(salary_total))
 
-salary_work <- salary_work[salary_work$totalyears <= 35,]
+salary_work <- df %>%
+  select(
+    compensation, years_worked_political_data, 
+    years_worked_political, years_worked_data, 
+    years_worked_total, work_hist_eligible) %>%
+  filter(
+    work_hist_eligible == TRUE
+  ) 
 
 ## creates chart
-ggplot(salary_work, aes(x = totalyears, y = salary_total)) +
+ggplot(salary_work, aes(x = years_worked_total, y = compensation)) +
   geom_jitter(stat = "identity", width = 2, height = 2) +
   geom_smooth(method = "loess") +
   theme_light()+
