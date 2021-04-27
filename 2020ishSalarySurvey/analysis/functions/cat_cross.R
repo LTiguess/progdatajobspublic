@@ -64,14 +64,12 @@ cat_cross <- function(x, question, cross_var,
     mutate(pct = n/total_by_cross, 
            # add n-size, so we can create a label for the table 
            cross_var_bin =  paste0(cross_var, "\n(n = ", total_by_cross, ")")) %>%
-      mutate(pct = formattable::percent(pct, 0)) %>%
-      select(question, cross_var_bin, pct) %>%
-      spread(key = cross_var_bin, value = pct)
-    
-    # change NAs to 0
-    df2 <- df2 %>%
-      mutate(across(2:ncol(df2), ~ replace_na(., 0L))) 
-    
+   # replace any NAs with 0s 
+    # mutate(pct = ifelse(is.na(pct), 0, pct)) %>%
+    mutate(pct = formattable::percent(pct, 0)) %>%
+    select(question, cross_var_bin, pct) %>%
+    spread(key = cross_var_bin, value = pct)
+  
   # return semi-formatted counts  
   return(df2)
 }

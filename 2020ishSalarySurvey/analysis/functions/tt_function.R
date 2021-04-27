@@ -74,12 +74,17 @@ tt <- function(x, weights = NULL,
   } else {
  #   Returns the HTML stuff
     df %>%  
+    #  mutate(unweighted_prop  = color_bar("lightgray")(unweighted_prop)) %>% 
       rename(' ' = variable,
              'Proportion' = unweighted_prop,
-             'N' = unweighted_n) %>%
+             'N' = unweighted_n) %>% 
+     
       formattable::formattable(list(
         Proportion = formattable::proportion_bar()),
         align = c('l', 'r', 'r'))
+    # %>%
+      # kable("html", escape = F, booktabs = T) %>%
+      # kable_styling("hover", full_width = T)
   }
 
 

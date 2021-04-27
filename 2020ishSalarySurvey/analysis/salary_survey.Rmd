@@ -29,9 +29,9 @@ library(dplyr)
 library(tidyr)
 library(viridis)
 library(forcats)
-library(ggridges)
 library(pollster)
-#library(kableExtra) 
+library(kableExtra) 
+library(likert)
 ```
 
 
@@ -277,15 +277,6 @@ mult_resp(df, "employment_status_jan_21",  order_prop = T)
 mult_resp(df, "employment_status_cycle_20",  order_prop = T)
 ```
 
-### Employed in 2020 (full/part time) --> Jan 2021 Employment Status 
-**REMOVE**
-```{r, message = FALSE, echo = FALSE }
-mult_resp(
-  df %>% filter(employment_status_cycle_20.resp.full_time == TRUE |
-                  employment_status_cycle_20.resp.part_time == TRUE),
-  "employment_status_jan_21",
-  order_prop = T)
-```
 
 
 ### Involvement in Data/Analytics/Tech
@@ -633,7 +624,7 @@ plot <- ggplot(
   geom_bar(
     stat = "count",
     fill = "#440154FF") +
-  scale_x_binned(n.breaks = 6) + 
+ # scale_x_binned(n.breaks = 15) + 
   xlab("% of Time Conducting Analysis or Writing Code") +
   ylab("Count") + theme_minimal() 
 
@@ -659,7 +650,9 @@ tmp <- df %>%
   # get Ns for people in each seniority bucket
   group_by(seniority_level) %>%
   mutate(seniority_level_n = n())  %>%
-  ungroup() %>%
+  ungroup() %>% 
+   # remmove if n is less than or equal to 5 
+  filter(seniority_level_n >= 6) %>% 
   # Add n-size to seniority_level label
   mutate(seniority_level_label = paste0(seniority_level, " (N = ", seniority_level_n, ")")) %>%
   # factor the label column based on the previous ordering by seniority type
@@ -715,12 +708,10 @@ ggplot(tmp, aes(x = perc_time_coding * 100,
 
 
 # Skills + Tools
-Olivia TODO
 
 ## Tools {.tabset}
 
 **How comfortable are you with the following skills and tools?**
-https://stackoverflow.com/questions/43520318/how-to-use-percentage-as-label-in-stacked-bar-plot 
 
 * **Never used this before**: Maybe you've heard of this tool, but you've never used it directly in or outside of work
 * **Introductory**: You have maybe read about it or completed a tutorial, but you haven't used this in a major project
@@ -732,7 +723,83 @@ https://stackoverflow.com/questions/43520318/how-to-use-percentage-as-label-in-s
 
 This graph displays the full distribution of responses to skill level. Responses are ordered by the proportion of respondents who rate themselves as having intermediate or advanced skills.
 
-```{r, message = FALSE, echo = FALSE }
+**working on fixing graph**
+
+```{r, message = FALSE, echo = FALSE, fig.width = 14, fig.height = 12 }
+# make a df of just the columns/values we are interested in
+tmp <- df %>%
+  select(contains("skills_comfort.resp"))
+
+# reshape the df
+tmp$category <- row.names(tmp)
+tmp2 <- reshape2::melt(tmp, id.vars = "category")
+
+
+
+
+plot_data <- tmp2 %>%
+  # for each question, get percents of people who answered
+  # never used, intro, novice, intermediate, advanced
+  count(variable, value) %>%
+  group_by(variable) %>%
+  mutate(
+    pct = n /sum(n),
+    # create label for bar plot
+    bar_label =  ifelse(
+      pct < .05, "",
+      scales::label_percent(accuracy = 1)(pct)),
+    value = factor(
+      value,
+      levels = c("Advanced", "Intermediate",  "Novice",
+                 "Introductory", "Never used this before"))
+  ) %>%
+  # add cleaned version of responses
+  left_join(
+    col_names,
+    by = c("variable" = "col_name_final")
+  )
+
+order_helper <- plot_data %>%
+  filter(value == "Never used this before") %>%
+  unique() %>%
+  arrange(desc(pct)) %>%
+  select(variable)
+order_helper$order <- 1:nrow(order_helper)
+
+plot_data <- plot_data %>%
+  left_join(order_helper, by = "variable")
+
+# make plot
+p <- ggplot(
+  plot_data,
+  aes(
+    x = reorder(response_name, order),
+    y = pct,
+    fill = value)) +
+  geom_col(width = 0.7) +
+  coord_flip() +
+  scale_fill_viridis_d() +
+  theme_minimal() +
+  # remove x and y axis label
+  theme(
+    axis.title.x = element_blank(),
+    axis.title.y = element_blank()
+  ) +
+  # make the x-axis into percents
+  scale_y_continuous(labels = scales::percent) +
+  # add labels
+  geom_text(aes(label = bar_label),
+            position = position_stack(vjust = 0.5)) +
+  # edit legend: remove the key and reverse the order of the values
+  theme(legend.title = element_blank(),
+        legend.position = "bottom") +
+  guides(fill = guide_legend(reverse = TRUE))
+
+p
+```
+
+
+```{r, message = FALSE, echo = FALSE, fig.width = 12, fig.height = 12 }
 # make a df of just the columns/values we are interested in
 tmp <- df %>%
   select(contains("skills_comfort.resp")) 
@@ -740,6 +807,9 @@ tmp <- df %>%
 # reshape the df
 tmp$category <- row.names(tmp)
 tmp2 <- reshape2::melt(tmp, id.vars = "category")
+
+
+
 
 plot_data <- tmp2 %>%
   # for each question, get percents of people who answered 
@@ -754,8 +824,8 @@ plot_data <- tmp2 %>%
       scales::label_percent(accuracy = 1)(pct)), 
     value = factor(
       value, 
-      levels = c("Advanced", "Intermediate",  "Novice", 
-                 "Introductory", "Never used this before"))
+      levels = c("Advanced", "Intermediate", 
+                  "Never used this before", "Introductory", "Novice"))
   ) %>%
   # add cleaned version of responses 
   left_join(
@@ -773,13 +843,15 @@ order_helper$order <- 1:nrow(order_helper)
 plot_data <- plot_data %>% 
   left_join(order_helper, by = "variable")
 
+right <- plot_data %>% filter(value %in% c("Advanced", "Intermediate"))
+left <- plot_data %>% filter(value %in% c("Novice", "Introductory", "Never used this before"))
+
 # make plot
-p <- ggplot(
-  plot_data, 
-  aes(
-    x = reorder(response_name, order),
-    y = pct, fill = value)) +
-  geom_col(width = 0.7) +
+p <- ggplot() + 
+  geom_col(data = right, aes(x = reorder(response_name, order), y = pct, fill = value)) +
+  geom_col(data = left, aes(x = reorder(response_name, order), y = -pct, fill = value), 
+                 position = position_stack(reverse = T)) +
+ geom_col(width = 0.7) +
   coord_flip() +
   scale_fill_viridis_d() +
   theme_minimal() +
@@ -788,19 +860,31 @@ p <- ggplot(
     axis.title.x = element_blank(),
     axis.title.y = element_blank()
   ) +
-  # make the x-axis into percents
+ # make the x-axis into percents
   scale_y_continuous(labels = scales::percent) +
   # add labels
-  geom_text(aes(label = bar_label),
-            position = position_stack(vjust = 0.5)) +
+  geom_text(data = right, 
+            aes(x =  response_name,  
+                y =  pct, 
+                label = bar_label),
+             position = position_stack(vjust = 0.5)) +
+  geom_text(data = left, 
+            aes(x =  response_name,  
+                y =  -pct, 
+              label = bar_label),
+             position = position_stack(vjust = 0.5)) +
   # edit legend: remove the key and reverse the order of the values
-  theme(legend.title = element_blank(), 
+  theme(legend.title = element_blank(),
         legend.position = "bottom") +
   guides(fill = guide_legend(reverse = TRUE))
 
 p
 ```
 
+<!-- # ```{r} -->
+<!-- # plot_likert(mydf) + theme_minimal() scale_fill_viridis_d()  -->
+<!-- # plot_likert(tmp)+ theme_minimal() -->
+<!-- # ``` -->
 
 ## Skills {.tabset}
 **Which of the following items have you personally done in the last year? Please select all that apply.**
@@ -996,7 +1080,7 @@ mult_resp(df %>% filter(negotiate_yesno =="Yes"),
 
 #### By Gender 
 
-```{r, message = FALSE, echo = FALSE }
+```{r, echo = FALSE, message=FALSE}
 mult_resp_cross(
   x = df %>% # remove people who didn't answer yes to the previous question
   filter(negotiate_yesno =="Yes"),
@@ -1067,7 +1151,7 @@ tt(
 ### Available 
 **What types of employer-funded professional development opportunities are available to you? Please select all that apply.** [only asked to respondents who are offered career development opportunities]
 ```{r, message = FALSE, echo = FALSE }
-r1 <- mult_resp(df %>% filter(prof_dev_yesno == "Yes"),
+mult_resp(df %>% filter(prof_dev_yesno == "Yes"),
           "prof_dev_available",
           order_prop = T)
 ```
@@ -1085,6 +1169,7 @@ mult_resp(df ,
           order_prop = T, 
           last_ord = "Haven't used any")
 ```
+
 
 
 ### Free Text 
@@ -1120,7 +1205,7 @@ salary_cross(x = df,
              salary_bin_numeric = compensation_bin_numeric,
              order_by = "n")
 
-plot_salary(df, var)
+plot_salary(df, var) + scale_colour_viridis_d(option = "A")
 ```
 
 ### Gender (Binned)
@@ -1183,7 +1268,7 @@ salary_cross(x = df,
              order_by = "n",
              last_ord = c("Prefer not to answer"))
 
-plot_salary(df, var)
+plot_salary(df, var) +  scale_colour_viridis_d(option = "B")
 ```
 
 ### Age
@@ -1248,26 +1333,6 @@ salary_cross(x = df,
 ) 
 ```
 
-
-### Immigration Status
-**DELETE**
-```{r, message = FALSE, echo = FALSE }
-
-salary_cross(x = df, 
-             variable = immigration,
-             salary = compensation, 
-             salary_bin = compensation_bin, 
-             salary_bin_numeric = compensation_bin_numeric,
-             order_by = "levels", # n, levels, alpha
-             lvls = c("I’m the first generation in the United States",
-            "One or more of my parents immigrated to the United States",
-            "One or more of my grandparents immigrated to the United States",
-            "My family has been in the United States for 3 generations or more",
-            "None of the above",
-            "Prefer not to answer")
-             ) 
-
-```
 
 ## Education 
 ```{r, message = FALSE, echo = FALSE }
@@ -1440,29 +1505,6 @@ salary_cross(x = df,
 
 
 ```
-
-### Time Writing Code 
-**DELETE**
-```{r, message = FALSE, echo = FALSE }
-salary_cross(x = df, 
-             variable = perc_time_coding,
-             salary = compensation, 
-             salary_bin = compensation_bin, 
-             salary_bin_numeric = compensation_bin_numeric,
-             order_by = "alpha") 
-
-```
-
-```{r, message = FALSE, echo = FALSE }
-## creates chart
-ggplot(df, aes(x = perc_time_coding * 100, y = compensation)) +
-  geom_jitter(stat = "identity", width = 2, height = 2) +
-  geom_smooth(method = "loess") +
-  theme_light()+
-  xlab("Percent of Time Writing Code")+
-  ylab("Salary") 
-```
-
 
 
 

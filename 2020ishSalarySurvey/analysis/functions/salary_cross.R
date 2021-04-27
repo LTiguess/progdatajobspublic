@@ -49,6 +49,7 @@ cross_table <- df  %>%
   summarise(
     mean = mean(salary),
     median_numeric = round(median(salary_bin_numeric), 0),
+    median = median(salary), 
     n = n()
   ) %>% 
   # remmove if n is less than or equal to 5 
@@ -84,8 +85,11 @@ if(order_by == "n"){
 # clean-up output 
 clean_table <- cross_table %>%
   # select only the necessary columns
-  select(variable, n, mean, median = salary_bin) %>%  
-  mutate(mean = formattable::currency(mean, digits = 0))  %>%  
+  select(variable, n, mean,  median
+         #, median_bin = salary_bin
+         ) %>%  
+  mutate(mean = formattable::currency(mean, digits = 0), 
+         median = formattable::currency(median, digits = 0))  %>%  
   # mutate(mean = ifelse(n >= 5, formattable::currency(mean), NA),
   #        median = ifelse(n >= 5, median, NA)) %>%
   
@@ -93,10 +97,14 @@ clean_table <- cross_table %>%
   rename('Category' = variable,
          'N' = n,
          'Mean' = mean,
-         'Median' = median) %>%
+         'Median' = median
+        # 'Median Bin' = median_bin
+        ) %>%
   formattable::formattable(
     list(N = formattable::proportion_bar()),
-    align = c('l', 'r', 'r', 'r'))  
+    align = c('l', 'r', 'r', 'r'
+            #  , 'r'
+              ))  
 # %>% 
 #   kbl() %>%
 #   kable_minimal()
