@@ -67,14 +67,17 @@ mult_resp <- function(df, question.prefix, raw_df = F,
   if(raw_df == TRUE){
     freq
   } else {
-    freq %>%
+    freq %>% 
+      mutate(unweighted_prop  = color_bar("lightgray")(unweighted_prop))  %>% 
       rename(' ' = response_name,
              'Proportion' = unweighted_prop, 
              'N' = unweighted_n) %>%
-      formattable::formattable(list(
-        Proportion = formattable::proportion_bar()),
-        align = c('l', 'r', 'r')
-      )
+      # formattable::formattable(list(
+      #   Proportion = formattable::proportion_bar()),
+      #   align = c('l', 'r', 'r')
+      kable("html", escape = F, booktabs = T, align = "lrr") %>%
+      kable_styling("hover")  
+      
   }
 }
 

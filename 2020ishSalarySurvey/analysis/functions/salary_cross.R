@@ -90,6 +90,7 @@ clean_table <- cross_table %>%
          ) %>%  
   mutate(mean = formattable::currency(mean, digits = 0), 
          median = formattable::currency(median, digits = 0))  %>%  
+  mutate(n  = color_bar("lightgray")(n)) %>% 
   # mutate(mean = ifelse(n >= 5, formattable::currency(mean), NA),
   #        median = ifelse(n >= 5, median, NA)) %>%
   
@@ -100,11 +101,13 @@ clean_table <- cross_table %>%
          'Median' = median
         # 'Median Bin' = median_bin
         ) %>%
-  formattable::formattable(
-    list(N = formattable::proportion_bar()),
-    align = c('l', 'r', 'r', 'r'
-            #  , 'r'
-              ))  
+  # formattable::formattable(
+  #   list(N = formattable::proportion_bar()),
+  #   align = c('l', 'r', 'r', 'r'
+  #           #  , 'r'
+  #             ))  
+kable("html", escape = F, booktabs = T, align = "lrrr") %>%
+  kable_styling("hover")  
 # %>% 
 #   kbl() %>%
 #   kable_minimal()

@@ -74,17 +74,20 @@ tt <- function(x, weights = NULL,
   } else {
  #   Returns the HTML stuff
     df %>%  
-    #  mutate(unweighted_prop  = color_bar("lightgray")(unweighted_prop)) %>% 
+      mutate(unweighted_prop  = color_bar("lightgray")(unweighted_prop)) %>% 
+      # mutate(variable = cell_spec(variable, "html", align = "l"),
+      #        unweighted_prop = cell_spec(unweighted_prop, "html", align = "l"), 
+      #        unweighted_n = cell_spec(unweighted_n, "html", align = "r")) %>%
       rename(' ' = variable,
              'Proportion' = unweighted_prop,
              'N' = unweighted_n) %>% 
-     
-      formattable::formattable(list(
-        Proportion = formattable::proportion_bar()),
-        align = c('l', 'r', 'r'))
-    # %>%
-      # kable("html", escape = F, booktabs = T) %>%
-      # kable_styling("hover", full_width = T)
+# 
+#       formattable::formattable(list(
+#         Proportion = formattable::proportion_bar()),
+#         align = c('l', 'r', 'r')) %>%
+    kable("html", escape = F, booktabs = T, align = "lrr") %>%
+      kable_styling("hover")  
+       
   }
 
 
