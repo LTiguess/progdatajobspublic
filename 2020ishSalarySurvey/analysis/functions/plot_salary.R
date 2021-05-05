@@ -27,7 +27,8 @@ plot_salary <- function(dat, variable){
     theme_light()+
     theme(legend.title=element_blank())+
     xlab("Years of Experience")+
-    ylab("Salary")
+    ylab("Salary") + 
+    scale_y_continuous(labels=scales::dollar_format())
   
   return(plot)
 } 
