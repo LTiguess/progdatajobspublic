@@ -695,31 +695,19 @@ salary_cross(x = df,
              order_by = "n")
 
 plot_salary(df, var) + 
-  scale_colour_viridis_d(option = "A") +
+ # scale_colour_viridis_d(option = "A") +
   theme_minimal() + 
   labs(color = "Gender") + 
+
   scale_color_manual(values = viridis::viridis(3, end = .85))
-```
 
-### Gender (Binned)
 
-```{r, message = FALSE, echo = FALSE }
-var <- substitute(gender_cis)
-
-salary_cross(x = df,
-             variable = var,
-             salary = compensation, 
-             salary_bin = compensation_bin, 
-             salary_bin_numeric = compensation_bin_numeric,
-             order_by = "n")
-
-plot_salary(df, var) + theme_minimal()  +  labs(color = "Gender") + 
-  scale_color_manual(values = c("#DD513AFF", "#440154FF"))
 ```
 
 
 
-### Race / Ethnicity 
+
+### Race
 
 ```{r, message = FALSE, echo = FALSE }
 var <- substitute(race_bin2)
@@ -732,8 +720,10 @@ salary_cross(x = df,
              order_by = "n",
              last_ord = c("Prefer not to answer"))
 
+
 plot_salary(df, var) + theme_minimal() +  labs(color = "Race / Ethnicity") + 
   scale_color_manual(values = viridis::viridis(2, end = .8))
+
 ```
 
 
@@ -790,9 +780,10 @@ salary_cross(x = df,
 
 ## Education 
 ```{r, message = FALSE, echo = FALSE }
+var <- substitute(education_level)
 
 salary_cross(x = df, 
-             variable = education_level,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
@@ -1408,8 +1399,8 @@ mult_resp(df, "role_next_year", order_prop =  T)
 
 # Covid{.tabset}
 
-## Additional Benefits{#covid}
-**Regardless of whether you were eligible, did your employer offer any additional benefits due to the COVID-19 pandemic?**
+## Additional Benefits
+**Regardless of whether you were eligible, did your employer offer any additional benefits due to the COVID-19 pandemic?** 
 ```{r, message = FALSE, echo = FALSE }
 tt(df$covid_benefits_yesno, 
    order_prop = F, 
@@ -1433,7 +1424,7 @@ Beyond the responses covered in the question above, organizations implemented fo
 
 # Union {.tabset}
 
-## Is Unionized?{#union}
+## Is Unionized?
 **Is your organization unionized or does it have one or more recognized bargaining units?**
 ```{r, message = FALSE, echo = FALSE }
 tt(df$is_unionized, lvls = c("Yes", "No", "Unsure"))
@@ -1447,7 +1438,7 @@ tt(df$bargaining_unit_member[df$is_unionized == "Yes"],
 ```
 
 
-## Date of Unionization{#union_date}
+## Date of Unionization
 **When did your organization unionize?** [only asked to respondents whose organization is unionized or has one or more recognized bargaining units]
 ```{r, message = FALSE, echo = FALSE }
 tt(df$when_unionized[df$is_unionized == "Yes"], 
@@ -1545,7 +1536,9 @@ cat_cross(x = df,
   cross_var = gender_bin, 
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
+
   last_ord = NULL)
+
 ```
 
 
@@ -1556,7 +1549,15 @@ mult_resp_cross(
   # remove people who didn't answer yes to the previous question
   x = df[df$negotiate_yesno == "Yes", ],
   question_prefix = "negotiation_result", 
-  cross_var = gender_bin) 
+  cross_var = gender_bin, 
+  lvls = c(
+    "Yes, I increased my benefits", 
+    "Yes, I increased my compensation", 
+    "Yes, I improved my title", 
+    "No, I did not gain improved compensation, benefits or title"
+  )
+) 
+
 ```
 
 
@@ -1570,6 +1571,7 @@ cat_cross(x = df,
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
   last_ord = NULL)
+
 ```
 
 
@@ -1589,6 +1591,7 @@ mult_resp_cross(
     "No, I did not gain improved compensation, benefits or title"
   )
 )
+
 ```
 
 
@@ -1603,8 +1606,9 @@ cat_cross(x = df,
   cross_var = gender_race, 
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
+
   last_ord = NULL)
-  
+
 ```
 
 
@@ -1620,6 +1624,7 @@ mult_resp_cross(
     "Yes, I increased my compensation", 
     "Yes, I improved my title", 
     "No, I did not gain improved compensation, benefits or title"))
+
 ```
 
 
@@ -1641,6 +1646,7 @@ cat_cross(x = df,
      "10-14 staffers", 
      "More than 15 staffers"), 
   last_ord = NULL)
+
 ```
 
 ### By Race 
@@ -1672,12 +1678,13 @@ cat_cross(x = df,
      "10-14 staffers", 
      "More than 15 staffers"))
 
+
 ```
 
 
 ## Seniority by Demographics{.tabset}
 
-**How would you describe your level of seniority within the organization?**{#senior_demo}
+**How would you describe your level of seniority within the organization?**
 
 ### By Gender 
 ```{r, message = FALSE, echo = FALSE }
@@ -1693,6 +1700,7 @@ cat_cross(x = df,
      "Organization Head, President or C-Level", 
       "Other",
      "Freelance"))
+
 ```
 
 
@@ -1728,6 +1736,7 @@ cat_cross(x = df,
      "Organization Head, President or C-Level", 
       "Other",
      "Freelance"))
+
 ```
 
 

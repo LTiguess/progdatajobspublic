@@ -687,6 +687,9 @@ includes PII, but the other data files can be sent to git.
 Since we can't send the results to git, we'll upload to google drive instead.
 
 ```{r}
+
+df %>% ungroup()
+
 readr::write_csv(
   df,
   here::here("data", "survey_responses.csv")
