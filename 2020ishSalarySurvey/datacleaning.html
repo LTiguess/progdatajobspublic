@@ -360,18 +360,6 @@ pre code {
 url &lt;- 'https://docs.google.com/spreadsheets/d/1Txd27HY5Fc8MTcKGM_U1mOuRIrgjJtU7w1CSJxdvC3M'
 
 df &lt;- googlesheets4::read_sheet(url, sheet = '2/22: Data')</code></pre>
-<pre><code>## → Deleting 1 tokens obtained with an old tidyverse OAuth app</code></pre>
-<pre><code>## → You can expect interactive prompts to re-auth with the new app</code></pre>
-<pre><code>## → If this rolling of credentials is highly disruptive to your workflow, that
-##   means you should be relying on your own OAuth app (or using a service account
-##   token)</code></pre>
-<pre><code>##   Learn more these in these articles:</code></pre>
-<pre><code>##   &lt;https://gargle.r-lib.org/articles/get-api-credentials.html&gt;</code></pre>
-<pre><code>##   &lt;https://gargle.r-lib.org/articles/non-interactive-auth.html&gt;</code></pre>
-<pre><code>## → The default location for caching gargle OAuth tokens has changed</code></pre>
-<pre><code>##   Previously: /Users/maheletfekade/.R/gargle/gargle-oauth</code></pre>
-<pre><code>##   As of gargle v1.1.0: '~/Library/Caches/gargle'</code></pre>
-<pre><code>## → Relocating 2 existing tokens to new cache</code></pre>
 <pre><code>## → Using an auto-discovered, cached token</code></pre>
 <pre><code>##   To suppress this message, modify your code or options to clearly consent to the
 ##   use of a cached token</code></pre>
@@ -379,7 +367,6 @@ df &lt;- googlesheets4::read_sheet(url, sheet = '2/22: Data')</code></pre>
 <pre><code>##   &lt;https://gargle.r-lib.org/articles/non-interactive-auth.html&gt;</code></pre>
 <pre><code>## → The googlesheets4 package is using a cached token for
 ##   mahelet.fekade@gmail.com</code></pre>
-<pre><code>## Auto-refreshing stale OAuth token.</code></pre>
 <pre><code>## Reading from &quot;2/7 Survey Responses &quot;</code></pre>
 <pre><code>## Range &quot;'2/22: Data'&quot;</code></pre>
 <pre><code>## New names:
@@ -701,19 +688,30 @@ df %&gt;% filter(work_in_politics == &quot;No&quot;) %&gt;%
 <div id="gender" class="section level2">
 <h2>Gender</h2>
 <pre class="r"><code>df &lt;- df %&gt;% mutate(
-  gender_bin = case_when(
-    gender == &quot;Cis man&quot; ~ &quot;Cis man&quot;,
-    gender == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;,
-    gender != &quot;Prefer not to answer&quot; |
-      gender != &quot;Cis man&quot; ~ 'Non-Cis man'),
   gender_cis = case_when(
-    gender %in% c(&quot;Cis man&quot;, &quot;Cis Woman&quot;) ~ &quot;Cisgender&quot;,
+    gender %in% c(&quot;Cis man&quot;, &quot;Cis woman&quot;) ~ &quot;Cisgender&quot;,
     gender %in% c(
       &quot;Different gender identity, prefer to specify&quot;,
       &quot;Gender non-binary or non-conforming&quot;,
-      &quot;Trans man&quot;, &quot;Trans woman&quot;) ~ &quot;Trans or NonBinary&quot;,
-    gender == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;
-  )
+      &quot;Trans man&quot;, &quot;Trans woman&quot;) ~ &quot;Trans or Nonbinary&quot;,
+    gender == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;), 
+    
+    gender_bin = case_when(
+      gender == &quot;Cis man&quot; ~ &quot;Cis Man&quot;,
+      gender == &quot;Cis woman&quot; ~ &quot;Cis Woman&quot;,
+      gender %in% c(
+        &quot;Different gender identity, prefer to specify&quot;,
+        &quot;Gender non-binary or non-conforming&quot;,
+        &quot;Trans man&quot;, &quot;Trans woman&quot;) ~ &quot;Trans or Nonbinary&quot;,
+      gender == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;),
+  
+    gender_bin2 = case_when(
+      gender %in% c(&quot;Cis man&quot;, &quot;Trans man&quot;) ~ &quot;Man&quot;,
+      gender %in% c(&quot;Cis woman&quot;, &quot;Trans woman&quot;) ~ &quot;Woman&quot;,
+      gender %in% c(
+        &quot;Different gender identity, prefer to specify&quot;,
+        &quot;Gender non-binary or non-conforming&quot;) ~ &quot;Nonbinary&quot;,
+      gender == &quot;Prefer not to answer&quot; ~ &quot;Prefer not to answer&quot;)
 )</code></pre>
 </div>
 <div id="sexuality" class="section level2">
@@ -789,7 +787,11 @@ df &lt;- df %&gt;%
 </div>
 <div id="gender-x-race" class="section level2">
 <h2>Gender x Race</h2>
-<pre class="r"><code>df &lt;- df %&gt;% mutate(gender_race = paste(race_bin2, gender_bin, sep = &quot; | &quot;))</code></pre>
+<pre class="r"><code>df &lt;- df %&gt;% mutate(
+  gender_race = paste(race_bin2, gender_bin, sep = &quot; | &quot;), 
+  gender_cis_race = paste(race_bin2, gender_cis, sep = &quot; | &quot;), 
+  gender2_race = paste(race_bin2, gender_bin2, sep = &quot; | &quot;)
+)</code></pre>
 </div>
 <div id="salary" class="section level2">
 <h2>Salary</h2>
@@ -1073,6 +1075,97 @@ for(i in seq_along(pd_types)) {
 <h1>Write Clean Data To GoogleDrive</h1>
 <p>First, write the dataframes to a local directory via the <code>here</code> package. Make sure your .gitignore is set to ignore the main results df, since it includes PII, but the other data files can be sent to git.</p>
 <p>Since we can’t send the results to git, we’ll upload to google drive instead.</p>
+<pre class="r"><code>df %&gt;% ungroup()</code></pre>
+<pre><code>## # A tibble: 881 x 194
+##    response_id time_started        date_submitted      status  work_in_politics 
+##          &lt;dbl&gt; &lt;dttm&gt;              &lt;dttm&gt;              &lt;chr&gt;   &lt;chr&gt;            
+##  1          17 2021-01-15 05:25:14 2021-01-15 05:31:18 Comple… Did but employme…
+##  2          18 2021-01-15 09:17:52 2021-01-15 09:25:42 Comple… Did but employme…
+##  3          19 2021-01-15 09:17:50 2021-01-15 09:17:50 Partial &lt;NA&gt;             
+##  4          20 2021-01-15 10:26:04 2021-01-15 10:27:51 Partial No               
+##  5          21 2021-01-15 10:26:10 2021-01-15 11:00:19 Comple… Yes              
+##  6          22 2021-01-15 10:26:12 2021-01-15 10:32:58 Comple… Yes              
+##  7          23 2021-01-15 10:26:16 2021-01-15 10:35:53 Comple… Yes              
+##  8          24 2021-01-15 10:26:28 2021-01-15 10:33:49 Comple… Yes              
+##  9          25 2021-01-15 10:27:32 2021-01-15 10:33:33 Comple… Did but employme…
+## 10          26 2021-01-15 10:27:57 2021-01-15 14:15:59 Comple… Yes              
+## # … with 871 more rows, and 189 more variables:
+## #   employment_status_jan_21.resp.full_time &lt;lgl&gt;,
+## #   employment_status_jan_21.resp.part_time &lt;lgl&gt;,
+## #   employment_status_jan_21.resp.freelance &lt;lgl&gt;,
+## #   employment_status_jan_21.resp.school &lt;lgl&gt;,
+## #   employment_status_jan_21.resp.unemployed &lt;lgl&gt;,
+## #   employment_status_jan_21.resp.other &lt;lgl&gt;,
+## #   employment_status_cycle_20.resp.full_time &lt;lgl&gt;,
+## #   employment_status_cycle_20.resp.part_time &lt;lgl&gt;,
+## #   employment_status_cycle_20.resp.freelance &lt;lgl&gt;,
+## #   employment_status_cycle_20.resp.school &lt;lgl&gt;,
+## #   employment_status_cycle_20.resp.unemployed &lt;lgl&gt;,
+## #   employment_status_cycle_20.resp.other &lt;lgl&gt;, org_type &lt;chr&gt;,
+## #   seniority_level &lt;chr&gt;, data_40_org &lt;chr&gt;, data_40_team &lt;chr&gt;,
+## #   data_40_role &lt;chr&gt;, num_staffers &lt;chr&gt;, job_team_function &lt;chr&gt;,
+## #   perc_time_coding &lt;dbl&gt;, is_unionized &lt;chr&gt;, bargaining_unit_member &lt;chr&gt;,
+## #   when_unionized &lt;chr&gt;, compensation &lt;dbl&gt;, negotiate_yesno &lt;chr&gt;,
+## #   negotiation_result.resp.increased_money &lt;lgl&gt;,
+## #   negotiation_result.resp.increased_benefits &lt;lgl&gt;,
+## #   negotiation_result.resp.increased_title &lt;lgl&gt;,
+## #   negotiation_result.resp.no_increase &lt;lgl&gt;,
+## #   benefits.resp.paid_vacation &lt;lgl&gt;, benefits.resp.paid_sick &lt;lgl&gt;,
+## #   benefits.resp.retirement &lt;lgl&gt;, benefits.resp.prof_dev &lt;lgl&gt;,
+## #   benefits.resp.day_care &lt;lgl&gt;, benefits.resp.parental_leave &lt;lgl&gt;,
+## #   benefits.resp.pension &lt;lgl&gt;, benefits.resp.health_insurance &lt;lgl&gt;,
+## #   benefits.resp.company_stock &lt;lgl&gt;,
+## #   benefits.resp.remote_work_pre_covid &lt;lgl&gt;,
+## #   benefits.resp.phone_reimbursement &lt;lgl&gt;, benefits.resp.other &lt;lgl&gt;,
+## #   benefits.resp.none &lt;lgl&gt;, prof_dev_yesno &lt;chr&gt;,
+## #   prof_dev_available.resp.conference_present &lt;lgl&gt;,
+## #   prof_dev_available.resp.conference_attend &lt;lgl&gt;,
+## #   prof_dev_available.resp.certification &lt;lgl&gt;,
+## #   prof_dev_available.resp.trainings_offsite &lt;lgl&gt;,
+## #   prof_dev_available.resp.buy_materials &lt;lgl&gt;,
+## #   prof_dev_available.resp.trainings_small_group &lt;lgl&gt;,
+## #   prof_dev_available.resp.tution_reimbursement &lt;lgl&gt;,
+## #   prof_dev_available.resp.other &lt;lgl&gt;,
+## #   prof_dev_used.resp.conference_present &lt;lgl&gt;,
+## #   prof_dev_used.resp.conference_attend &lt;lgl&gt;,
+## #   prof_dev_used.resp.certification &lt;lgl&gt;,
+## #   prof_dev_used.resp.trainings_offsite &lt;lgl&gt;,
+## #   prof_dev_used.resp.buy_materials &lt;lgl&gt;,
+## #   prof_dev_used.resp.trainings_small_group &lt;lgl&gt;,
+## #   prof_dev_used.resp.tution_reimbursement &lt;lgl&gt;,
+## #   prof_dev_used.resp.other &lt;lgl&gt;, prof_dev_used.resp.not_used &lt;lgl&gt;,
+## #   projects_done_management.resp.coordinate_orgs &lt;lgl&gt;,
+## #   projects_done_management.resp.pitch_project &lt;lgl&gt;,
+## #   projects_done_management.resp.review_work &lt;lgl&gt;,
+## #   projects_done_management.resp.present_results &lt;lgl&gt;,
+## #   projects_done_management.resp.create_prof_dev_plan &lt;lgl&gt;,
+## #   projects_done_management.resp.hire_fire &lt;lgl&gt;,
+## #   projects_done_management.resp.none &lt;lgl&gt;, covid_benefits_yesno &lt;chr&gt;,
+## #   covid_benefits_specific.resp.remote_work &lt;lgl&gt;,
+## #   covid_benefits_specific.resp.paid_leave &lt;lgl&gt;,
+## #   covid_benefits_specific.resp.stipend &lt;lgl&gt;,
+## #   covid_benefits_specific.resp.child_care &lt;lgl&gt;,
+## #   covid_benefits_specific.resp.mental_health &lt;lgl&gt;,
+## #   covid_benefits_specific.resp.flexible_work &lt;lgl&gt;,
+## #   covid_benefits_specific.resp.other &lt;lgl&gt;, covid_freetext &lt;chr&gt;,
+## #   next_career_step.resp.leave_politics &lt;lgl&gt;,
+## #   next_career_step.resp.leave_political_data &lt;lgl&gt;,
+## #   next_career_step.resp.start_org &lt;lgl&gt;,
+## #   next_career_step.resp.learn_new_skills &lt;lgl&gt;,
+## #   next_career_step.resp.individual_contributor &lt;lgl&gt;,
+## #   next_career_step.resp.management &lt;lgl&gt;,
+## #   next_career_step.resp.new_org &lt;lgl&gt;, next_career_step.resp.no_change &lt;lgl&gt;,
+## #   next_career_step.resp.other &lt;lgl&gt;, leaving_org &lt;chr&gt;,
+## #   leaving_space.resp.salary &lt;lgl&gt;, leaving_space.resp.benefits &lt;lgl&gt;,
+## #   leaving_space.resp.work_life_balance &lt;lgl&gt;,
+## #   leaving_space.resp.stability &lt;lgl&gt;, leaving_space.resp.school &lt;lgl&gt;,
+## #   leaving_space.resp.stagnated &lt;lgl&gt;, leaving_space.resp.hostile &lt;lgl&gt;,
+## #   leaving_space.resp.burn_out &lt;lgl&gt;,
+## #   leaving_space.resp.better_growth_opportunities &lt;lgl&gt;,
+## #   leaving_space.resp.prefer_not_to_answer &lt;lgl&gt;,
+## #   role_next_year.resp.analytics_firm &lt;lgl&gt;,
+## #   role_next_year.resp.other_consulting &lt;lgl&gt;,
+## #   role_next_year.resp.vendor &lt;lgl&gt;, role_next_year.resp.advocacy_org &lt;lgl&gt;, …</code></pre>
 <pre class="r"><code>readr::write_csv(
   df,
   here::here(&quot;data&quot;, &quot;survey_responses.csv&quot;)

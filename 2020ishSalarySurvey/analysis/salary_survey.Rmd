@@ -9,7 +9,7 @@ output:
     toc_depth: 3
     toc_float:
       collapsed: true
- #   theme: flatly
+    theme: flatly
   # highlight: tango
     # theme: united
 ---
@@ -695,31 +695,16 @@ salary_cross(x = df,
              order_by = "n")
 
 plot_salary(df, var) + 
-  scale_colour_viridis_d(option = "A") +
+ # scale_colour_viridis_d(option = "A") +
   theme_minimal() + 
   labs(color = "Gender") + 
-  scale_color_manual(values = c("#DD513AFF", "#440154FF"))
-```
-
-### Gender (Binned)
-
-```{r, message = FALSE, echo = FALSE }
-var <- substitute(gender_cis)
-
-salary_cross(x = df,
-             variable = var,
-             salary = compensation, 
-             salary_bin = compensation_bin, 
-             salary_bin_numeric = compensation_bin_numeric,
-             order_by = "n")
-
-plot_salary(df, var) + theme_minimal()  +  labs(color = "Gender") + 
-  scale_color_manual(values = c("#DD513AFF", "#440154FF"))
+  scale_color_manual(values = c("#000004FF", "#721F81FF", "#F1605DFF"))
 ```
 
 
 
-### Race / Ethnicity 
+
+### Race
 
 ```{r, message = FALSE, echo = FALSE }
 var <- substitute(race_bin2)
@@ -732,7 +717,7 @@ salary_cross(x = df,
              order_by = "n",
              last_ord = c("Prefer not to answer"))
 
-plot_salary(df, var) + theme_minimal() +  labs(color = "Race / Ethnicity") + 
+plot_salary(df, var) + theme_minimal() +  labs(color = "Race") + 
   scale_color_manual(values = c("#F7D340FF", "#5C126EFF"))
 ```
 
@@ -790,9 +775,10 @@ salary_cross(x = df,
 
 ## Education 
 ```{r, message = FALSE, echo = FALSE }
+var <- substitute(education_level)
 
 salary_cross(x = df, 
-             variable = education_level,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
@@ -1408,8 +1394,6 @@ mult_resp(df, "role_next_year", order_prop =  T)
 
 # Covid{.tabset}
 
-{#covid}
-
 ## Additional Benefits
 **Regardless of whether you were eligible, did your employer offer any additional benefits due to the COVID-19 pandemic?** 
 ```{r, message = FALSE, echo = FALSE }
@@ -1434,8 +1418,6 @@ Beyond the responses covered in the question above, organizations implemented fo
 
 
 # Union {.tabset}
-
-{#union} 
 
 ## Is Unionized?
 **Is your organization unionized or does it have one or more recognized bargaining units?**
@@ -1550,14 +1532,8 @@ cat_cross(x = df,
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
   last_ord = NULL
-            ) %>%
-   mutate( `All\n(n = 608)`  = color_bar("lightgray")( `All\n(n = 608)`), 
-           `Cis man\n(n = 259)` =  color_bar("lightgray")( `Cis man\n(n = 259)`), 
-            `Non-Cis man\n(n = 341)`  = color_bar("lightgray")(`Non-Cis man\n(n = 341)`)) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrr") %>%
-      kable_styling("hover")  
+            )
+
 ```
 
 
@@ -1569,20 +1545,24 @@ mult_resp_cross(
   filter(negotiate_yesno =="Yes"),
   question_prefix = "negotiation_result", 
   cross_var = gender_bin
-  )  %>% 
-  mutate(
+  ) %>%
+   mutate(
     response_name = factor(response_name,
-                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation", 
-                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>% 
-      arrange(response_name)  %>% 
-    
-  # add some nice formatting 
-      mutate( `All\n(n = 219)`  = color_bar("lightgray")( `All\n(n = 219)`), 
-           `Cis man\n(n = 92)` =  color_bar("lightgray")( `Cis man\n(n = 92)`), 
-            `Non-Cis man\n(n = 124)`  = color_bar("lightgray")(`Non-Cis man\n(n = 124)`))  %>% 
-  rename(' ' = response_name) %>%
-  kable("html", escape = F, booktabs = T, align = "lrrr") %>%
-      kable_styling("hover")  
+                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation",
+                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>%
+      arrange(response_name) %>% 
+      mutate(across(2:ncol(.), ~ color_bar("lightgray")(.))) %>% 
+      # add some nice formatting 
+      rename(' ' = response_name) %>%
+      # formattable::formattable(list(
+      #   area(col = 2:ncol(.)) ~ formattable::proportion_bar()), 
+      #   # first col aligns left, everything else aligns right
+      #   align = c('l', rep('r', ncol(.) - 1)))
+      kable("html", escape = F, booktabs = T, align = c('l', rep('r', ncol(.) - 1))) %>%
+      kable_styling("hover")
+  # rename(' ' = response_name) %>%
+  # kable("html", escape = F, booktabs = T, align = "lrrr") %>%
+  #     kable_styling("hover")  
 ```
 
 
@@ -1596,16 +1576,7 @@ cat_cross(x = df,
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
   last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-  mutate(
-     `All\n(n = 608)` = color_bar("lightgray")(`All\n(n = 608)`),
-     `POC/Other\n(n = 212)` = color_bar("lightgray")(`POC/Other\n(n = 212)`),
-      `White\n(n = 390)` = color_bar("lightgray")( `White\n(n = 390)`)
-  ) %>%
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrrr") %>%
-      kable_styling("hover")  
+            ) 
 ```
 
 
@@ -1620,17 +1591,18 @@ mult_resp_cross(
    )  %>% 
   mutate(
     response_name = factor(response_name,
-                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation", 
-                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>% 
-      arrange(response_name)  %>% 
-  # add some nice formatting 
-   mutate(
-     `All\n(n = 219)` = color_bar("lightgray")(`All\n(n = 219)`),
-     `POC/Other\n(n = 85)` = color_bar("lightgray")(`POC/Other\n(n = 85)`),
-      `White\n(n = 133)` = color_bar("lightgray")( `White\n(n = 133)`)) %>%
+                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation",
+                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>%
+      arrange(response_name) %>% 
+      mutate(across(2:ncol(.), ~ color_bar("lightgray")(.))) %>% 
+      # add some nice formatting 
       rename(' ' = response_name) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrrr") %>%
-      kable_styling("hover")  
+      # formattable::formattable(list(
+      #   area(col = 2:ncol(.)) ~ formattable::proportion_bar()), 
+      #   # first col aligns left, everything else aligns right
+      #   align = c('l', rep('r', ncol(.) - 1)))
+      kable("html", escape = F, booktabs = T, align = c('l', rep('r', ncol(.) - 1))) %>%
+      kable_styling("hover")
      
   
 
@@ -1649,19 +1621,7 @@ cat_cross(x = df,
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
   last_ord = NULL
-            ) %>%
-    # add some nice formatting 
-   mutate(
-      `All\n(n = 608)` = color_bar("lightgray")(`All\n(n = 608)`),
-     `POC/Other | Cis man\n(n = 85)` = color_bar("lightgray")( `POC/Other | Cis man\n(n = 85)`),
-      `POC/Other | Non-Cis man\n(n = 126)` = color_bar("lightgray")( `POC/Other | Non-Cis man\n(n = 126)`),
-     `White | Cis man\n(n = 173)` = color_bar("lightgray")( `White | Cis man\n(n = 173)`), 
-      `White | Non-Cis man\n(n = 214)` = color_bar("lightgray")( `White | Non-Cis man\n(n = 214)`)) %>%
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrrr") %>%
-      kable_styling("hover")  
-  
-  
+            ) 
 
 
 ```
@@ -1674,22 +1634,21 @@ mult_resp_cross( x = df %>% # remove people who didn't answer yes to the previou
   question_prefix = "negotiation_result", 
   cross_var = gender_race
 )  %>% 
+
   mutate(
     response_name = factor(response_name,
-                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation", 
-                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>% 
-      arrange(response_name)  %>% 
-   # add some nice formatting 
-   mutate(
-      `All\n(n = 219)` = color_bar("lightgray")(`All\n(n = 219)`),
-     `POC/Other | Cis man\n(n = 37)` = color_bar("lightgray")( `POC/Other | Cis man\n(n = 37)`),
-      `POC/Other | Non-Cis man\n(n = 48)` = color_bar("lightgray")( `POC/Other | Non-Cis man\n(n = 48)`),
-     `White | Cis man\n(n = 55)` = color_bar("lightgray")( `White | Cis man\n(n = 55)`), 
-      `White | Non-Cis man\n(n = 76)` = color_bar("lightgray")( `White | Non-Cis man\n(n = 76)`)) %>%
+                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation",
+                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>%
+      arrange(response_name) %>% 
+      mutate(across(2:ncol(.), ~ color_bar("lightgray")(.))) %>% 
+      # add some nice formatting 
       rename(' ' = response_name) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrrr") %>%
-      kable_styling("hover")  
-
+      # formattable::formattable(list(
+      #   area(col = 2:ncol(.)) ~ formattable::proportion_bar()), 
+      #   # first col aligns left, everything else aligns right
+      #   align = c('l', rep('r', ncol(.) - 1)))
+      kable("html", escape = F, booktabs = T, align = c('l', rep('r', ncol(.) - 1))) %>%
+      kable_styling("hover")
  
 
 ```
@@ -1713,14 +1672,8 @@ cat_cross(x = df,
      "10-14 staffers", 
      "More than 15 staffers"), 
   last_ord = NULL
-            ) %>%
-   mutate( `All\n(n = 608)`  = color_bar("lightgray")( `All\n(n = 608)`), 
-           `Cis man\n(n = 259)` =  color_bar("lightgray")( `Cis man\n(n = 259)`), 
-            `Non-Cis man\n(n = 341)`  = color_bar("lightgray")(`Non-Cis man\n(n = 341)`)) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrr") %>%
-      kable_styling("hover")  
+            )
+
 
 ```
 
@@ -1736,16 +1689,8 @@ cat_cross(x = df,
      "5-9 staffers",
      "10-14 staffers", 
      "More than 15 staffers"), 
-  last_ord = NULL) %>%
-   # add some nice formatting 
-  mutate(
-     `All\n(n = 608)` = color_bar("lightgray")(`All\n(n = 608)`),
-     `POC/Other\n(n = 212)` = color_bar("lightgray")(`POC/Other\n(n = 212)`),
-      `White\n(n = 390)` = color_bar("lightgray")( `White\n(n = 390)`)
-  ) %>%
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrrr") %>%
-      kable_styling("hover")  
+  last_ord = NULL) 
+
 
 ```
 
@@ -1763,24 +1708,16 @@ cat_cross(x = df,
      "10-14 staffers", 
      "More than 15 staffers"), 
   last_ord = NULL
-            ) %>%
-   # add some nice formatting 
-   mutate(
-      `All\n(n = 608)` = color_bar("lightgray")(`All\n(n = 608)`),
-      `POC/Other | Cis man\n(n = 85)` = color_bar("lightgray")( `POC/Other | Cis man\n(n = 85)`),
-      `POC/Other | Non-Cis man\n(n = 126)` = color_bar("lightgray")( `POC/Other | Non-Cis man\n(n = 126)`),
-      `White | Cis man\n(n = 173)` = color_bar("lightgray")( `White | Cis man\n(n = 173)`), 
-      `White | Non-Cis man\n(n = 214)` = color_bar("lightgray")( `White | Non-Cis man\n(n = 214)`)) %>%
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrrr") %>%
-      kable_styling("hover")  
+            )
+
+
 
 ```
 
 
 ## Seniority by Demographics{.tabset}
 
-**How would you describe your level of seniority within the organization?**{#senior_demo}
+**How would you describe your level of seniority within the organization?**
 
 ### By Gender 
 ```{r, message = FALSE, echo = FALSE }
@@ -1797,15 +1734,8 @@ cat_cross(x = df,
       "Other",
      "Freelance"),
   last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-   mutate( `All\n(n = 608)`  = color_bar("lightgray")( `All\n(n = 608)`), 
-           `Cis man\n(n = 259)` =  color_bar("lightgray")( `Cis man\n(n = 259)`), 
-            `Non-Cis man\n(n = 341)`  = color_bar("lightgray")(`Non-Cis man\n(n = 341)`)) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrr") %>%
-      kable_styling("hover")  
+            ) 
+
 ```
 
 
@@ -1824,16 +1754,8 @@ cat_cross(x = df,
       "Other",
      "Freelance"),
   last_ord = NULL
-            ) %>% 
- # add some nice formatting 
-  mutate(
-     `All\n(n = 608)` = color_bar("lightgray")(`All\n(n = 608)`),
-     `POC/Other\n(n = 212)` = color_bar("lightgray")(`POC/Other\n(n = 212)`),
-      `White\n(n = 390)` = color_bar("lightgray")( `White\n(n = 390)`)
-  ) %>%
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrrr") %>%
-      kable_styling("hover")  
+            )
+
 ```
 
 
@@ -1853,18 +1775,7 @@ cat_cross(x = df,
       "Other",
      "Freelance"), 
   last_ord = NULL
-            ) %>%
-    # add some nice formatting 
-   mutate(
-      `All\n(n = 608)` = color_bar("lightgray")(`All\n(n = 608)`),
-     `POC/Other | Cis man\n(n = 85)` = color_bar("lightgray")( `POC/Other | Cis man\n(n = 85)`),
-      `POC/Other | Non-Cis man\n(n = 126)` = color_bar("lightgray")( `POC/Other | Non-Cis man\n(n = 126)`),
-     `White | Cis man\n(n = 173)` = color_bar("lightgray")( `White | Cis man\n(n = 173)`), 
-      `White | Non-Cis man\n(n =214)` = color_bar("lightgray")( `White | Non-Cis man\n(n = 214)`)) %>%
-      rename(' ' = question) %>%
-       kable("html", escape = F, booktabs = T, align = "lrrrr") %>%
-      kable_styling("hover")  
-
+            ) 
 
 
 ```
