@@ -30,7 +30,7 @@ mult_resp_cross <- function(x, question_prefix, cross_var){
      count(var, cross_var, total_yes) %>% 
      mutate(pct = formattable::percent(total_yes/n, 0), 
     # add n-size, so we can create a label for the table 
-     cross_var_bin =  paste0(cross_var, "\n(n = ", n, ")")) %>%
+     cross_var_bin =  paste0(cross_var, "\n (n = ", n, ")")) %>%
      # remove groups with less than 5 people in them 
      filter(n >= 6) %>% 
      # add in cleanned response name
@@ -40,7 +40,15 @@ mult_resp_cross <- function(x, question_prefix, cross_var){
      ) %>% 
      select(response_name, cross_var_bin, pct) %>%
      spread(key = cross_var_bin, value = pct) 
-  
-# return semi-formatted counts  
+   
+   # return fully-formatted counts  
+   df2 <- df2 %>% 
+     # add some nice formatting 
+     rename(' ' = response_name) %>%
+     formattable::formattable(list(
+       area(col = 2:ncol(.)) ~ formattable::proportion_bar()), 
+       # first col aligns left, everything else aligns right
+       align = c('l', rep('r', ncol(.) - 1)))
+   
   return(df2)
 }

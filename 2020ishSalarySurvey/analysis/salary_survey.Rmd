@@ -19,18 +19,16 @@ rm(list=ls())
 
 ```{r, message = FALSE,echo = FALSE}
 # Load Packages
-#library(tidyverse)
 library(formattable)
 library(ggridges)
-library(DescTools)
-library(googlesheets4)
+# library(DescTools)
+# library(googlesheets4)
 library(ggplot2)
 library(dplyr)
 library(tidyr)
 library(viridis)
-library(forcats)
-library(ggridges)
-library(pollster)
+# library(forcats)
+# library(pollster)
 #library(kableExtra) 
 ```
 
@@ -386,27 +384,39 @@ tt(df$seniority_level,
 
 ### By Gender 
 ```{r, message = FALSE, echo = FALSE }
-cat_cross(x = df, 
+cat_cross(
+  x = df, 
   question = seniority_level, 
   cross_var = gender_bin, 
   order_by = "levels", 
   lvls = c(
-     "Entry-Level",
-     "Mid-Level", 
-     "Senior-Level, but not Department Head", 
-     "Department Head", 
-     "Organization Head, President or C-Level", 
-      "Other",
-     "Freelance"),
-  last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `Cis man\n(n = 259)` = formattable::proportion_bar(), 
-        `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r', 'r'))
+    "Entry-Level",
+    "Mid-Level", 
+    "Senior-Level, but not Department Head", 
+    "Department Head", 
+    "Organization Head, President or C-Level", 
+    "Other",
+    "Freelance"),
+  last_ord = NULL)
+```
+
+
+### By Gender
+```{r, message = FALSE, echo = FALSE }
+cat_cross(
+  x = df, 
+  question = seniority_level, 
+  cross_var = gender_bin2, 
+  order_by = "levels", 
+  lvls = c(
+    "Entry-Level",
+    "Mid-Level", 
+    "Senior-Level, but not Department Head", 
+    "Department Head", 
+    "Organization Head, President or C-Level", 
+    "Other",
+    "Freelance"),
+  last_ord = NULL)
 ```
 
 
@@ -424,18 +434,7 @@ cat_cross(x = df,
      "Organization Head, President or C-Level", 
       "Other",
      "Freelance"),
-  last_ord = NULL
-            )  %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `Asian or Asian American (including South Asian)\n(n = 77)` = formattable::proportion_bar(), 
-        `Black\n(n = 30)` = formattable::proportion_bar(), 
-        `Hispanic or Latinx\n(n = 33)`  = formattable::proportion_bar(),
-        `Multi-Racial\n(n = 63)`  = formattable::proportion_bar(), 
-        `White\n(n = 390)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r', 'r', 'r', 'r'))
+  last_ord = NULL)
 ```
 
 ### By Race (Binned)
@@ -452,22 +451,14 @@ cat_cross(x = df,
      "Organization Head, President or C-Level", 
       "Other",
      "Freelance"),
-  last_ord = NULL
-            ) %>% 
-  # add some nice formatting
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(),
-        `POC/Other\n(n = 212)` = formattable::proportion_bar(),
-        `White\n(n = 390)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r'))
+  last_ord = NULL) 
 ```
 
 
 ### By Gender x Race (Binned)
-TODO: Figure out why proportion bars for 'POC/Other | Cis man (n = 85)' and 'White | Non-Cis man (n = 214)' are off. Probably beccause NA values.
-Olivia note 4/11 -- this seems to be fixed with my edit to the cat_cross.R function, not sure why yet 
+
 ```{r, message = FALSE, echo = FALSE }
+
 cat_cross(x = df, 
   question = seniority_level, 
   cross_var = gender_race, 
@@ -480,19 +471,7 @@ cat_cross(x = df,
      "Organization Head, President or C-Level", 
       "Other",
      "Freelance"), 
-  last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `POC/Other | Cis man\n(n = 85)` = formattable::proportion_bar(), 
-        `POC/Other | Non-Cis man\n(n = 126)` = formattable::proportion_bar(), 
-        `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
-        `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r', 'r'))
-
-
+  last_ord = NULL) 
 ```
 
 
@@ -510,7 +489,6 @@ tt(df$num_staffers, order_prop = F,
      "More than 15 staffers"))
 ```
 
-
 ### By Gender 
 
 ```{r, message = FALSE, echo = FALSE }
@@ -525,18 +503,27 @@ cat_cross(x = df,
      "5-9 staffers",
      "10-14 staffers", 
      "More than 15 staffers"), 
-  last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `Cis man\n(n = 259)` = formattable::proportion_bar(), 
-        `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r', 'r'))
+  last_ord = NULL)
 
 ```
 
+### By Gender 
+
+```{r, message = FALSE, echo = FALSE }
+
+cat_cross(x = df, 
+  question = num_staffers, 
+  cross_var = gender_bin2, 
+  order_by = "levels", 
+  lvls = c(
+     "0 staffers",
+     "1-4 staffers", 
+     "5-9 staffers",
+     "10-14 staffers", 
+     "More than 15 staffers"), 
+  last_ord = NULL)
+
+```
 
 
 
@@ -553,18 +540,7 @@ cat_cross(x = df,
      "5-9 staffers",
      "10-14 staffers", 
      "More than 15 staffers"), 
-  last_ord = NULL
-) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `Asian or Asian American (including South Asian)\n(n = 77)` = formattable::proportion_bar(), 
-        `Black\n(n = 30)` = formattable::proportion_bar(), 
-        `Hispanic or Latinx\n(n = 33)`  = formattable::proportion_bar(),
-        `Multi-Racial\n(n = 63)`  = formattable::proportion_bar(), 
-        `White\n(n = 390)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r', 'r', 'r', 'r'))
+  last_ord = NULL)
 
 ```
 
@@ -580,14 +556,7 @@ cat_cross(x = df,
      "5-9 staffers",
      "10-14 staffers", 
      "More than 15 staffers"), 
-  last_ord = NULL) %>%
-  # add some nice formatting
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(),
-        `POC/Other\n(n = 212)` = formattable::proportion_bar(),
-        `White\n(n = 390)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r'))
+  last_ord = NULL)
 
 ```
 
@@ -604,17 +573,7 @@ cat_cross(x = df,
      "5-9 staffers",
      "10-14 staffers", 
      "More than 15 staffers"), 
-  last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `POC/Other | Cis man\n(n = 85)` = formattable::proportion_bar(), 
-        `POC/Other | Non-Cis man\n(n = 126)` = formattable::proportion_bar(), 
-        `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
-        `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r', 'r'))
+  last_ord = NULL)
 ```
 
 
@@ -926,15 +885,7 @@ cat_cross(x = df,
   cross_var = gender_bin, 
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
-  last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `Cis man\n(n = 259)` = formattable::proportion_bar(), 
-        `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r'))
+  last_ord = NULL)
 ```
 
 
@@ -946,15 +897,7 @@ cat_cross(x = df,
   cross_var = race_bin2, 
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
-  last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `POC/Other\n(n = 212)` = formattable::proportion_bar(), 
-        `White\n(n = 390)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r', 'r'))
+  last_ord = NULL)
 
 ```
 
@@ -967,17 +910,7 @@ cat_cross(x = df,
   cross_var = gender_race, 
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
-  last_ord = NULL
-            ) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `POC/Other | Cis man\n(n = 85)` = formattable::proportion_bar(), 
-        `POC/Other | Non-Cis man\n(n = 126)` = formattable::proportion_bar(), 
-        `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
-        `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r', 'r'))
+  last_ord = NULL)
 
 ```
 
@@ -1001,16 +934,7 @@ mult_resp_cross(
   x = df %>% # remove people who didn't answer yes to the previous question
   filter(negotiate_yesno =="Yes"),
   question_prefix = "negotiation_result", 
-  cross_var = gender_bin
-  )  %>%
-  # add some nice formatting 
-      rename(' ' = response_name) %>%
-      formattable::formattable(list(
-        `All\n(n = 219)` = formattable::proportion_bar(), 
-        `Cis man\n(n = 92)` = formattable::proportion_bar(), 
-        `Non-Cis man\n(n = 124)` = formattable::proportion_bar(), 
-        `Prefer not to answer\n(n = 3)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r'))
+  cross_var = gender_bin)
 ```
 
 #### By Race
@@ -1019,33 +943,17 @@ mult_resp_cross(
   x = df %>% # remove people who didn't answer yes to the previous question
   filter(negotiate_yesno =="Yes"),
   question_prefix = "negotiation_result", 
-  cross_var = race_bin2
-  )  %>%
-  # add some nice formatting 
-      rename(' ' = response_name) %>%
-      formattable::formattable(list(
-        `All\n(n = 219)` = formattable::proportion_bar(), 
-        `POC/Other\n(n = 85)` = formattable::proportion_bar(), 
-        `White\n(n = 133)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r'))
+  cross_var = race_bin2)
 ```
 
 #### By Gender x Race 
 ```{r, message = FALSE, echo = FALSE }
-mult_resp_cross( x = df %>% # remove people who didn't answer yes to the previous question
+
+mult_resp_cross(
+  x = df %>% # remove people who didn't answer yes to the previous question
   filter(negotiate_yesno =="Yes"),
   question_prefix = "negotiation_result", 
-  cross_var = gender_race
-            ) %>%
-  # add some nice formatting
-      rename(' ' = response_name) %>%
-      formattable::formattable(list(
-        `All\n(n = 219)` = formattable::proportion_bar(), 
-        `POC/Other | Cis man\n(n = 37)` = formattable::proportion_bar(), 
-        `POC/Other | Non-Cis man\n(n = 48)` = formattable::proportion_bar(), 
-        `White | Cis man\n(n = 55)` = formattable::proportion_bar(), 
-        `White | Non-Cis man\n(n = 76)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r', 'r'))
+  cross_var = gender_cis_race)
 
 ```
 
@@ -1170,7 +1078,7 @@ salary_cross(x = df,
 plot_salary(df, var)
 ```
 
-### Gender x Race / Ethnicity 
+### Gender x Race
 
 ```{r, message = FALSE, echo = FALSE }
 var <- substitute(gender_race)
@@ -1183,7 +1091,7 @@ salary_cross(x = df,
              order_by = "n",
              last_ord = c("Prefer not to answer"))
 
-plot_salary(df, var)
+# plot_salary(df[df$gender_cis == "Cisgender", ], var)
 ```
 
 ### Age
@@ -1246,34 +1154,16 @@ salary_cross(x = df,
                       "No, I don't have a disability", "Other"),
              last_ord = c("Prefer not to answer", "Missing")
 ) 
-```
-
-
-### Immigration Status
-**DELETE**
-```{r, message = FALSE, echo = FALSE }
-
-salary_cross(x = df, 
-             variable = immigration,
-             salary = compensation, 
-             salary_bin = compensation_bin, 
-             salary_bin_numeric = compensation_bin_numeric,
-             order_by = "levels", # n, levels, alpha
-             lvls = c("I’m the first generation in the United States",
-            "One or more of my parents immigrated to the United States",
-            "One or more of my grandparents immigrated to the United States",
-            "My family has been in the United States for 3 generations or more",
-            "None of the above",
-            "Prefer not to answer")
-             ) 
 
 ```
 
 ## Education 
 ```{r, message = FALSE, echo = FALSE }
+var <- substitute(education_level)
+
 
 salary_cross(x = df, 
-             variable = education_level,
+             variable = var,
              salary = compensation, 
              salary_bin = compensation_bin, 
              salary_bin_numeric = compensation_bin_numeric,
@@ -1287,8 +1177,6 @@ salary_cross(x = df,
                        "Other"), 
     last_ord = c("Prefer not to answer", "Missing")
              ) 
-
-
 ```
 
 
@@ -1506,14 +1394,7 @@ cat_cross(x = df,
             "I’m not planning to leave", 
             "My current job / contract ends within the next 12 months", 
             "I am currently unemployed"), 
-          last_ord = NULL) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `Cis man\n(n = 259)` = formattable::proportion_bar(), 
-        `Non-Cis man\n(n = 341)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r', 'r'))
+          last_ord = NULL) 
 ```
 
 
@@ -1528,16 +1409,7 @@ cat_cross(x = df,
             "I’m not planning to leave", 
             "My current job / contract ends within the next 12 months", 
             "I am currently unemployed"), 
-          last_ord = NULL)  %>%  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `Asian or Asian American (including South Asian)\n(n = 77)` = formattable::proportion_bar(), 
-        `Black\n(n = 30)` = formattable::proportion_bar(), 
-        `Hispanic or Latinx\n(n = 33)`  = formattable::proportion_bar(),
-        `Multi-Racial\n(n = 63)`  = formattable::proportion_bar(), 
-        `White\n(n = 390)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r', 'r', 'r', 'r'))
+          last_ord = NULL)
 
 ```
 
@@ -1552,14 +1424,7 @@ cat_cross(x = df,
             "I’m not planning to leave", 
             "My current job / contract ends within the next 12 months", 
             "I am currently unemployed"), 
-          last_ord = NULL)  %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `POC/Other\n(n = 212)` = formattable::proportion_bar(), 
-        `White\n(n = 390)` = formattable::proportion_bar()), 
-        align = c('l', 'r', 'r', 'r', 'r'))
+          last_ord = NULL) 
 
 ```
 
@@ -1577,16 +1442,7 @@ cat_cross(x = df,
             "I’m not planning to leave", 
             "My current job / contract ends within the next 12 months", 
             "I am currently unemployed"), 
-          last_ord = NULL) %>%
-  # add some nice formatting 
-      rename(' ' = question) %>%
-      formattable::formattable(list(
-        `All\n(n = 608)` = formattable::proportion_bar(), 
-        `POC/Other | Cis man\n(n = 85)` = formattable::proportion_bar(), 
-        `POC/Other | Non-Cis man\n(n = 126)` = formattable::proportion_bar(), 
-        `White | Cis man\n(n = 173)` = formattable::proportion_bar(), 
-        `White | Non-Cis man\n(n = 214)` = formattable::proportion_bar()),
-        align = c('l', 'r', 'r', 'r', 'r', 'r'))
+          last_ord = NULL) 
 ```
 
 
