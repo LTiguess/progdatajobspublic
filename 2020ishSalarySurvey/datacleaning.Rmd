@@ -282,30 +282,30 @@ df %>% filter(work_in_politics == "No") %>%
 
 ```{r}
 df <- df %>% mutate(
+  gender_bin = case_when(
+    gender == "Cis man" ~ "Cis Man", 
+    gender == "Cis woman" ~ "Cis Woman", 
+    gender %in% c(
+      "Different gender identity, prefer to specify",
+      "Gender non-binary or non-conforming",
+      "Trans man", "Trans woman") ~ "Trans or Nonbinary",
+    gender == "Prefer not to answer" ~ "Prefer not to answer"),
+  
+  gender_bin2 = case_when(
+    gender %in% c("Cis man", "Trans man") ~ "Man", 
+    gender %in% c("Cis woman", "Trans woman") ~ "Woman", 
+    gender %in% c(
+      "Different gender identity, prefer to specify",
+      "Gender non-binary or non-conforming") ~ "Nonbinary",
+    gender == "Prefer not to answer" ~ "Prefer not to answer"),
+  
   gender_cis = case_when(
     gender %in% c("Cis man", "Cis woman") ~ "Cisgender",
     gender %in% c(
       "Different gender identity, prefer to specify",
       "Gender non-binary or non-conforming",
       "Trans man", "Trans woman") ~ "Trans or Nonbinary",
-    gender == "Prefer not to answer" ~ "Prefer not to answer"), 
-    
-    gender_bin = case_when(
-      gender == "Cis man" ~ "Cis Man",
-      gender == "Cis woman" ~ "Cis Woman",
-      gender %in% c(
-        "Different gender identity, prefer to specify",
-        "Gender non-binary or non-conforming",
-        "Trans man", "Trans woman") ~ "Trans or Nonbinary",
-      gender == "Prefer not to answer" ~ "Prefer not to answer"),
-  
-    gender_bin2 = case_when(
-      gender %in% c("Cis man", "Trans man") ~ "Man",
-      gender %in% c("Cis woman", "Trans woman") ~ "Woman",
-      gender %in% c(
-        "Different gender identity, prefer to specify",
-        "Gender non-binary or non-conforming") ~ "Nonbinary",
-      gender == "Prefer not to answer" ~ "Prefer not to answer")
+    gender == "Prefer not to answer" ~ "Prefer not to answer")
 )
 ```
 

@@ -158,7 +158,7 @@ df <- df %>%
 ### Gender
 
 **What is your gender identity?**
-```{r, echo=FALSE}
+```{r,  message = FALSE, echo=FALSE}
 tt(df$gender, 
    order_prop = T, 
    last_ord = "Prefer not to answer"
@@ -698,7 +698,10 @@ plot_salary(df, var) +
  # scale_colour_viridis_d(option = "A") +
   theme_minimal() + 
   labs(color = "Gender") + 
-  scale_color_manual(values = c("#000004FF", "#721F81FF", "#F1605DFF"))
+
+  scale_color_manual(values = viridis::viridis(3, end = .85))
+
+
 ```
 
 
@@ -717,8 +720,10 @@ salary_cross(x = df,
              order_by = "n",
              last_ord = c("Prefer not to answer"))
 
-plot_salary(df, var) + theme_minimal() +  labs(color = "Race") + 
-  scale_color_manual(values = c("#F7D340FF", "#5C126EFF"))
+
+plot_salary(df, var) + theme_minimal() +  labs(color = "Race / Ethnicity") + 
+  scale_color_manual(values = viridis::viridis(2, end = .8))
+
 ```
 
 
@@ -1531,8 +1536,8 @@ cat_cross(x = df,
   cross_var = gender_bin, 
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
-  last_ord = NULL
-            )
+
+  last_ord = NULL)
 
 ```
 
@@ -1541,28 +1546,18 @@ cat_cross(x = df,
 
 ```{r, echo = FALSE, message=FALSE}
 mult_resp_cross(
-  x = df %>% # remove people who didn't answer yes to the previous question
-  filter(negotiate_yesno =="Yes"),
+  # remove people who didn't answer yes to the previous question
+  x = df[df$negotiate_yesno == "Yes", ],
   question_prefix = "negotiation_result", 
-  cross_var = gender_bin
-  ) %>%
-   mutate(
-    response_name = factor(response_name,
-                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation",
-                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>%
-      arrange(response_name) %>% 
-      mutate(across(2:ncol(.), ~ color_bar("lightgray")(.))) %>% 
-      # add some nice formatting 
-      rename(' ' = response_name) %>%
-      # formattable::formattable(list(
-      #   area(col = 2:ncol(.)) ~ formattable::proportion_bar()), 
-      #   # first col aligns left, everything else aligns right
-      #   align = c('l', rep('r', ncol(.) - 1)))
-      kable("html", escape = F, booktabs = T, align = c('l', rep('r', ncol(.) - 1))) %>%
-      kable_styling("hover")
-  # rename(' ' = response_name) %>%
-  # kable("html", escape = F, booktabs = T, align = "lrrr") %>%
-  #     kable_styling("hover")  
+  cross_var = gender_bin, 
+  lvls = c(
+    "Yes, I increased my benefits", 
+    "Yes, I increased my compensation", 
+    "Yes, I improved my title", 
+    "No, I did not gain improved compensation, benefits or title"
+  )
+) 
+
 ```
 
 
@@ -1575,36 +1570,27 @@ cat_cross(x = df,
   cross_var = race_bin2, 
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
-  last_ord = NULL
-            ) 
+  last_ord = NULL)
+
 ```
 
 
 **Was your negotiation successful? Please select all that apply.** [only asked to respondents who attempted a negotiation]
 
 ```{r, message = FALSE, echo = FALSE }
+
 mult_resp_cross(
-  x = df %>% # remove people who didn't answer yes to the previous question
-  filter(negotiate_yesno =="Yes"),
+  # remove people who didn't answer yes to the previous question
+  x = df[df$negotiate_yesno == "Yes", ],
   question_prefix = "negotiation_result", 
-  cross_var = race_bin2
-   )  %>% 
-  mutate(
-    response_name = factor(response_name,
-                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation",
-                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>%
-      arrange(response_name) %>% 
-      mutate(across(2:ncol(.), ~ color_bar("lightgray")(.))) %>% 
-      # add some nice formatting 
-      rename(' ' = response_name) %>%
-      # formattable::formattable(list(
-      #   area(col = 2:ncol(.)) ~ formattable::proportion_bar()), 
-      #   # first col aligns left, everything else aligns right
-      #   align = c('l', rep('r', ncol(.) - 1)))
-      kable("html", escape = F, booktabs = T, align = c('l', rep('r', ncol(.) - 1))) %>%
-      kable_styling("hover")
-     
-  
+  cross_var = race_bin2, 
+  lvls = c(
+    "Yes, I increased my benefits", 
+    "Yes, I increased my compensation", 
+    "Yes, I improved my title", 
+    "No, I did not gain improved compensation, benefits or title"
+  )
+)
 
 ```
 
@@ -1620,36 +1606,24 @@ cat_cross(x = df,
   cross_var = gender_race, 
   order_by = "levels", 
   lvls = c("Yes", "No", "Not applicable (union, freelancer, etc.)"), 
-  last_ord = NULL
-            ) 
 
+  last_ord = NULL)
 
 ```
 
 
 **Was your negotiation successful? Please select all that apply.** [only asked to respondents who attempted a negotiation]
 ```{r, message = FALSE, echo = FALSE }
-mult_resp_cross( x = df %>% # remove people who didn't answer yes to the previous question
-  filter(negotiate_yesno =="Yes"),
+mult_resp_cross(
+  # remove people who didn't answer yes to the previous question
+  x = df[df$negotiate_yesno == "Yes", ],
   question_prefix = "negotiation_result", 
-  cross_var = gender_race
-)  %>% 
-
-  mutate(
-    response_name = factor(response_name,
-                      levels = c("Yes, I increased my benefits", "Yes, I increased my compensation",
-                                 "Yes, I improved my title" , "No, I did not gain improved compensation, benefits or title")))  %>%
-      arrange(response_name) %>% 
-      mutate(across(2:ncol(.), ~ color_bar("lightgray")(.))) %>% 
-      # add some nice formatting 
-      rename(' ' = response_name) %>%
-      # formattable::formattable(list(
-      #   area(col = 2:ncol(.)) ~ formattable::proportion_bar()), 
-      #   # first col aligns left, everything else aligns right
-      #   align = c('l', rep('r', ncol(.) - 1)))
-      kable("html", escape = F, booktabs = T, align = c('l', rep('r', ncol(.) - 1))) %>%
-      kable_styling("hover")
- 
+  cross_var = gender_race, 
+  lvls = c(
+    "Yes, I increased my benefits", 
+    "Yes, I increased my compensation", 
+    "Yes, I improved my title", 
+    "No, I did not gain improved compensation, benefits or title"))
 
 ```
 
@@ -1671,9 +1645,7 @@ cat_cross(x = df,
      "5-9 staffers",
      "10-14 staffers", 
      "More than 15 staffers"), 
-  last_ord = NULL
-            )
-
+  last_ord = NULL)
 
 ```
 
@@ -1688,9 +1660,7 @@ cat_cross(x = df,
      "1-4 staffers", 
      "5-9 staffers",
      "10-14 staffers", 
-     "More than 15 staffers"), 
-  last_ord = NULL) 
-
+     "More than 15 staffers"))
 
 ```
 
@@ -1706,10 +1676,7 @@ cat_cross(x = df,
      "1-4 staffers", 
      "5-9 staffers",
      "10-14 staffers", 
-     "More than 15 staffers"), 
-  last_ord = NULL
-            )
-
+     "More than 15 staffers"))
 
 
 ```
@@ -1732,9 +1699,7 @@ cat_cross(x = df,
      "Department Head", 
      "Organization Head, President or C-Level", 
       "Other",
-     "Freelance"),
-  last_ord = NULL
-            ) 
+     "Freelance"))
 
 ```
 
@@ -1752,10 +1717,7 @@ cat_cross(x = df,
      "Department Head", 
      "Organization Head, President or C-Level", 
       "Other",
-     "Freelance"),
-  last_ord = NULL
-            )
-
+     "Freelance")) 
 ```
 
 
@@ -1773,10 +1735,7 @@ cat_cross(x = df,
      "Department Head", 
      "Organization Head, President or C-Level", 
       "Other",
-     "Freelance"), 
-  last_ord = NULL
-            ) 
-
+     "Freelance"))
 
 ```
 
