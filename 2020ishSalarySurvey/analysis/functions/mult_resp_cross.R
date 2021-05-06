@@ -3,9 +3,10 @@
 #' @param question_prefix each response to a multi-select survey question has its own column and 
 #  all the responses have the same prefix. 
 #' @param cross_var variable you want to cross the survey question by  
+#' @param lvls = level order in x (if you want it ordered). needs to be character vector 
 
 
-mult_resp_cross <- function(x, question_prefix, cross_var){
+mult_resp_cross <- function(x, question_prefix, cross_var, lvls = NULL){
   
   # create a df that subsets to the right columns 
   df <- x %>% 
@@ -38,9 +39,37 @@ mult_resp_cross <- function(x, question_prefix, cross_var){
        col_names,
        by = c("var" = "col_name_final")
      ) %>% 
-     select(response_name, cross_var_bin, pct) %>%
-     spread(key = cross_var_bin, value = pct) 
+     select(response_name, cross_var_bin, pct)
+   
+   if(! is.null(lvls)){
+     df2 <- df2 %>%
+       mutate(
+         response_name = factor(
+           response_name,
+           levels = lvls)
+       ) %>% 
+       arrange(response_name)
+   }
+   
+   df2 <- df2 %>% 
+     spread(key = cross_var_bin, value = pct)
+
   
-# return semi-formatted counts  
+   # return fully-formatted counts  
+   df2 <- df2 %>% 
+     # add some nice formatting 
+     mutate(across(2:ncol(.), color_bar("lightgray"))) %>% 
+     rename(' ' = response_name) %>%
+     kable(
+       "html", 
+       escape = F, 
+       booktabs = T, 
+       # first col is left aligned, all others are right
+       align = paste0(
+         "l", 
+         paste0(rep("r", ncol(.) - 1), collapse = ""))
+     ) %>%
+     kable_styling("hover") 
+   
   return(df2)
 }

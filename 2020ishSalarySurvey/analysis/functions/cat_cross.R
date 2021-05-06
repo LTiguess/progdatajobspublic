@@ -74,7 +74,22 @@ cat_cross <- function(x, question, cross_var,
     df2 <- df2 %>%
       mutate(across(2:ncol(df2), ~ replace_na(., 0L))) 
     
-    # return semi-formatted counts  
+    # return fully-formatted counts  
+    df2 <- df2 %>% 
+    # add some nice formatting 
+      mutate(across(2:ncol(.), color_bar("lightgray"))) %>% 
+      rename(' ' = question) %>%
+      kable(
+        "html", 
+        escape = F, 
+        booktabs = T, 
+        # first col is left aligned, all others are right
+        align = paste0(
+          "l", 
+          paste0(rep("r", ncol(.) - 1), collapse = ""))
+        ) %>%
+      kable_styling("hover") 
+    
     return(df2)
   
 }
