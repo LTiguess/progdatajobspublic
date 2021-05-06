@@ -66,7 +66,7 @@ We’ve highlighted some findings of interest, but strongly encourage you to rev
 
 * People of color have a median salary of $85K versus white people’s median salary of $90K. This racial salary gap is notably smaller than in previous surveys. 
 
-* Cis men and cis women women had similar median salaries ($90K and $88K respectively). Trans and nonbinary people had a lower median salaries ($72,250) than their cis colleagues, but we do not have enough disaggregated data from past surveys to make any comparisons. 
+* Cis men and cis women had similar median salaries ($90K and $88K respectively). Trans and nonbinary people had a lower median salary ($72,250) than their cis colleagues, but we do not have enough disaggregated data from past surveys to make any comparisons. 
 
 * Heterosexual people have a median salary of $90K and queer people have a median of $85K, however average salaries across respondents is essentially the same.
 
