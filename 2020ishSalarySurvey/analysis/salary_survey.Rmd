@@ -9,7 +9,7 @@ output:
     toc_depth: 3
     toc_float:
       collapsed: true
-    theme: flatly
+ #   theme: flatly
   # highlight: tango
     # theme: united
 ---
@@ -1408,8 +1408,10 @@ mult_resp(df, "role_next_year", order_prop =  T)
 
 # Covid{.tabset}
 
-## Additional Benefits{#covid}
-**Regardless of whether you were eligible, did your employer offer any additional benefits due to the COVID-19 pandemic?**
+{#covid}
+
+## Additional Benefits
+**Regardless of whether you were eligible, did your employer offer any additional benefits due to the COVID-19 pandemic?** 
 ```{r, message = FALSE, echo = FALSE }
 tt(df$covid_benefits_yesno, 
    order_prop = F, 
@@ -1433,7 +1435,9 @@ Beyond the responses covered in the question above, organizations implemented fo
 
 # Union {.tabset}
 
-## Is Unionized?{#union}
+{#union} 
+
+## Is Unionized?
 **Is your organization unionized or does it have one or more recognized bargaining units?**
 ```{r, message = FALSE, echo = FALSE }
 tt(df$is_unionized, lvls = c("Yes", "No", "Unsure"))
@@ -1447,7 +1451,7 @@ tt(df$bargaining_unit_member[df$is_unionized == "Yes"],
 ```
 
 
-## Date of Unionization{#union_date}
+## Date of Unionization
 **When did your organization unionize?** [only asked to respondents whose organization is unionized or has one or more recognized bargaining units]
 ```{r, message = FALSE, echo = FALSE }
 tt(df$when_unionized[df$is_unionized == "Yes"], 
