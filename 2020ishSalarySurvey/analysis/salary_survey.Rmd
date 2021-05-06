@@ -746,7 +746,7 @@ plot_salary(df, var) + theme_minimal() +  labs(color = "Race") +
 
 ```
 
-### Gender x Race 
+### Race x Gender
 
 ```{r, message = FALSE, echo = FALSE }
 var <- substitute(gender_race)
@@ -1632,7 +1632,7 @@ mult_resp_cross(
 ```
 
 
-### By Gender x Race 
+### By Race x Gender 
 **During your last job offer or performance review, did you try to negotiate your salary?**
 
 
@@ -1707,7 +1707,7 @@ cat_cross(x = df %>% mutate(
 
 ```
 
-### By Gender x Race 
+### By Race x Gender 
 ```{r, message = FALSE, echo = FALSE }
 
 cat_cross(x = df %>% mutate(
@@ -1788,7 +1788,7 @@ cat_cross(x = df %>%
 ```
 
 
-### By Gender x Race
+### By Race x Gender
 
 ```{r, message = FALSE, echo = FALSE }
 cat_cross(x = df %>% 
