@@ -1,6 +1,6 @@
 ---
 title: '2020 Progressive Data, Analytics, and Technology Salary Survey'
-author: "Mahelet Fekade, Lena Tom, Cristina Sinclaire, Amit Mistry, and Olivia Robinson"
+author: "Amit Mistry, Cristina Sinclaire, Lena Tom, Mahelet Fekade, and Olivia Robinson"
 date: "5/3/2021"
 output:
   html_document:
@@ -18,26 +18,26 @@ output:
 
 **About the Survey:**
 
-This survey was administered in January and February 2021 to progressive and Democratic data, analytics, and technology staff, largely reflecting respondents’ 2020 employment and salaries. Thanks to everyone who participated and/or shared the survey -- this was the largest participation n-size yet!
+This survey was administered in January and February 2021 to progressive and Democratic data, analytics, and technology staff, largely reflecting respondents’ 2020 employment and salaries. Thanks to everyone who participated and/or shared the survey! This was the largest sample yet.
+
 
 **How to use the results**
 
-There were 608 respondents recruited using [snowball sampling](https://en.wikipedia.org/wiki/Snowball_sampling). The survey was announced on a few major progressive and Democractic political and/or data email listservs and Slack channels, and readers were encouraged to share the survey around their offices and networks. **This should not be considered a representative sample of all people working in the industry.** The n-size and results as compared to [previous year surveys’](https://www.progressivedatajobs.org/salary-survey/) offer some consistency, particularly at the aggregate level, but some experiences may not be represented.
 
 
+
+There were 608 respondents recruited using [snowball sampling](https://en.wikipedia.org/wiki/Snowball_sampling). The survey was announced on a few major progressive and Democratic political and/or data email listservs and Slack channels, and readers were encouraged to share the survey around their offices and networks. **This should not be considered a representative sample of all people working in the industry.** The n-size and results as compared to [previous year surveys’](https://www.progressivedatajobs.org/salary-survey/) offer some consistency, particularly at the aggregate level, but some experiences may not be represented. 
 
 This survey may be useful in evaluating salaries and roles of individuals or workplaces, but a survey of this kind should be used with care -- your experience may be different. 
 
-
-Early salary surveys had heavy response rates among certain demographics, while more recent years have seen some notable shifts. We should be cautious in making assumptions about these demographic shifts. The survey is anonymous, and we are not able to make assessments about non-respondents. Some data has been obscured in this report due to small n-sizes (such as among certain demographic categories).
-
+Early salary surveys had heavy response rates among certain demographics, while more recent years have seen some notable shifts. We should be cautious in making assumptions about these demographic shifts. The survey is anonymous, and we are not able to make assessments about non-respondents. Some data has been obscured in this report due to small n-sizes to protect anonymization (such as among certain demographic categories).
 
 Finally, although useful to benchmark, **employers should NOT determine a role’s salary based on this survey alone.**
 
+We’ve highlighted some findings of interest, but strongly encourage you to review the full analysis.  
 
-We’ve highlighted some findings of interest, but strongly encourage you to review the full data set.  
 
-[**About Respondents**](#resp_char):
+[**About Respondents:**](#resp_char)
 
 * Gender: About half of respondents were cis women (49%). 43% were cis men. Seven percent were trans or non-binary. 
 
@@ -49,24 +49,43 @@ We’ve highlighted some findings of interest, but strongly encourage you to rev
 
 * 62% of respondents identified as heterosexual/straight. 
 
-* 57% of respondents have a bachelor's degree; 39% report a degree higher than a bachelor’s.
+* 57% of respondents have a bachelor's degree; 39% reported a degree higher than a bachelor’s.
 
-* 15% report having a disability (“a physical or mental impairment or medical condition that substantially limits a major life activity”).
+* 15% report having a disability (defined as “a physical or mental impairment or medical condition that substantially limits a major life activity”).
 
-* 35% of respondents live in the DC area, followed by New York metro area at 8% and Chicago metro area at 6%. 
+* 35% of respondents live in the DC area, followed by New York metro area at 8% and Chicago metro area at 6%.
 
 * Nearly all respondents (96%) were fully employed during the 2020 election cycle.
 
-[**Salary**](#salary)
-Need to add 
+
+[**Salary:**](#salary) The median salary was <span style="text-decoration:underline">$88,000</span> and the average salary was <span style="text-decoration:underline">$94,571</span>. 
+
+* **The 2020 salary survey reflects the first notable increase in both median and average salaries since the start of this survey in 2014.** The five past salary surveys have had a median salary of ~$75,000, +/- $5,000. There are likely multiple factors at play, however this survey did not aim to identify the causes.
+
+* Compared to non-managers, managers with 1-4 staffers had a median salary of ~$20K more and managers with 5+ staff had a median salary of ~$40K more. 
+
+* People of color** have a median salary of $85K versus white people’s median salary of $90K. This racial salary gap is notably smaller than in previous surveys. 
+
+* Cis men and cis women women had similar median salaries ($90K and $88K respectively). Trans and nonbinary people had a lower median salaries ($72,250) than their cis colleagues, but we do not have enough disaggregated data from past surveys to make any comparisons. 
+
+* Heterosexual people have a median salary of $90K and queer people have a median of $85K, however average salaries across respondents is essentially the same.
+
+* People with disabilities have median salaries of $15K less than non-disabled people, consistent with previous years.
+
+* Entry-level employees had a median salary of $68,000 (approximately $9K higher compared to [2018](https://www.crackthecode.io/salary2018)); mid-level employees $82,000 (~$8K higher); and senior / department-head employees $110,000 (~$10K higher).
+
+
+**People of color include those who identified as Black, Latinx, Hispanic, Asian, Native, and mixed-race.
+
 
 [**Skills + Tools:**](#skill_tools)
 
 * Within the last year, a majority of respondents have either transformed data/generated reports with SQL (74%), managed and reviewed others’ analysis or work (70%), created voter contact universes (59%), or presented the results of an analysis for non-technical leadership (59%). 
 
-* Almost 80% of respondents learned the skills and tools they use weekly at their current and/or previous job. 
+* Almost 80% of respondents learned the skills and tools they use weekly at their current and/or previous job.
 
-* A majority of respondents consider themselves to be either “intermediate” or “advanced” with Excel/Google spreadsheets (93%), SQL (72%), and voter file management (65%).
+* A majority of respondents consider themselves to be either “intermediate” or “advanced” with Excel/Google spreadsheets (93%), SQL (73%), and voter file management (65%).
+
 
 [**Job Characteristics:**](#job_char)
 
@@ -76,7 +95,8 @@ Need to add
 
 * A majority of respondents’ primary job function or primary function of their team was general analytics or data science (22%), general data management and reporting (19%), or field/grassroots-focused data (11%). 
 
-* 39% of respondents are managers.The likelihood of being a manager did not meaningfully vary by race and/or gender. 
+* 39% of respondents are managers. The likelihood of being a manager did not meaningfully vary by [race and/or gender](#appendix).
+
 
 **Other Findings:**
 
@@ -84,7 +104,7 @@ Need to add
 
 * 59% of respondents worked somewhere that provided additional benefits due to the [COVID-19 pandemic](#covid).
 
-* 26% respondents work in a [unionized workplace or have a recognized bargaining unit](#union). Among those respondents, a large plurality (47%) work someplace that has unionized within the past two years. 
+* 26% respondents work in a [unionized workplace or have a recognized bargaining unit](#union). Among those respondents, a large plurality (47%) work someplace that has unionized within the past two years.
 
 
 
@@ -721,8 +741,25 @@ salary_cross(x = df,
              last_ord = c("Prefer not to answer"))
 
 
-plot_salary(df, var) + theme_minimal() +  labs(color = "Race / Ethnicity") + 
+plot_salary(df, var) + theme_minimal() +  labs(color = "Race") + 
   scale_color_manual(values = viridis::viridis(2, end = .8))
+
+```
+
+### Gender x Race 
+
+```{r, message = FALSE, echo = FALSE }
+var <- substitute(gender_race)
+
+salary_cross(x = df,
+             variable = var,
+             salary = compensation, 
+             salary_bin = compensation_bin, 
+             salary_bin_numeric = compensation_bin_numeric,
+             order_by = "n",
+             last_ord = c("Prefer not to answer"))
+
+
 
 ```
 
@@ -1369,7 +1406,7 @@ Responses to this question included building dashboards, managing client relatio
 mult_resp(df, "next_career_step",  order_prop = T)
 ```
 
-## Plans to Leave{#plans_leave}
+## Plans to Leave{plans_to_leave}
 **Are you planning to leave your organization within the next year?**
 ```{r, message = FALSE, echo = FALSE }
 tt(df$leaving_org,
@@ -1468,9 +1505,9 @@ The second criteria was satisfied if the respondents answered “Yes” to one o
 
 ## Authors and Thanks
 
-This year’s salary survey was conducted and analyzed by Mahelet Fekade, Lena Tom, Cristina Sinclaire, Amit Mistry, and Olivia Robinson. Please reach out to us at salarysurvey@progressivedatajobs.org with any questions, comments, or concerns.
+This year’s salary survey was conducted and analyzed by Amit Mistry, Cristina Sinclaire, Lena Tom, Mahelet Fekade, and Olivia Robinson. Please reach out to us at salarysurvey@progressivedatajobs.org with any questions, comments, or concerns.
 
-We want to thank the folks who have conducted the salary surveys in the past (listed alphabetically): Sandhya Anathamaran, Anna Cooper, Kass DeVorsey, Lizzie Ellis, Audra Grassia, Chelsea Harris, Mike Jensen, and Annie J. Wang.
+We want to thank the folks who have conducted the salary surveys in the past (listed alphabetically): Anna Cooper, Annie J. Wang, Audra Grassia, Chelsea Harris, Kass DeVorsey, Lizzie Ellis, Mike Jensen, and Sandhya Anathamaran. 
 
 And the biggest thank you goes to everyone who took and shared the survey!
 
@@ -1634,49 +1671,60 @@ mult_resp_cross(
 ### By Gender 
 
 ```{r, message = FALSE, echo = FALSE }
-
-cat_cross(x = df, 
-  question = num_staffers, 
+cat_cross(x = df %>% mutate(
+  num_staffers_bin = case_when(
+    num_staffers == "0 staffers" ~ "0 staffers", 
+    num_staffers == "1-4 staffers" ~ "1-4 staffers", 
+    num_staffers != "0 staffers" | num_staffers != "1-4 staffers" ~ "5+ staffers"
+    )
+  ), 
+  question = num_staffers_bin,
   cross_var = gender_bin, 
-  order_by = "levels", 
-  lvls = c(
-     "0 staffers",
-     "1-4 staffers", 
-     "5-9 staffers",
-     "10-14 staffers", 
-     "More than 15 staffers"), 
-  last_ord = NULL)
-
+  order_by = "levels", # mean, levels, alpha
+  lvls = c("0 staffers",
+           "1-4 staffers", 
+           "5+ staffers"),
+    last_ord = NULL
+)
 ```
 
 ### By Race 
 ```{r, message = FALSE, echo = FALSE }
-cat_cross(x = df, 
-  question = num_staffers, 
+cat_cross(x = df %>% mutate(
+  num_staffers_bin = case_when(
+    num_staffers == "0 staffers" ~ "0 staffers", 
+    num_staffers == "1-4 staffers" ~ "1-4 staffers", 
+    num_staffers != "0 staffers" | num_staffers != "1-4 staffers" ~ "5+ staffers"
+    )
+  ), 
+  question = num_staffers_bin, 
   cross_var = race_bin2, 
   order_by = "levels", 
-  lvls = c(
-     "0 staffers",
-     "1-4 staffers", 
-     "5-9 staffers",
-     "10-14 staffers", 
-     "More than 15 staffers"))
+  lvls = c("0 staffers",
+           "1-4 staffers", 
+           "5+ staffers")
+)
 
 ```
 
 ### By Gender x Race 
 ```{r, message = FALSE, echo = FALSE }
 
-cat_cross(x = df, 
-  question = num_staffers, 
+cat_cross(x = df %>% mutate(
+  num_staffers_bin = case_when(
+    num_staffers == "0 staffers" ~ "0 staffers", 
+    num_staffers == "1-4 staffers" ~ "1-4 staffers", 
+    num_staffers != "0 staffers" | num_staffers != "1-4 staffers" ~ "5+ staffers"
+    )
+  ), 
+  question = num_staffers_bin, 
   cross_var = gender_race, 
   order_by = "levels", 
-  lvls = c(
-     "0 staffers",
-     "1-4 staffers", 
-     "5-9 staffers",
-     "10-14 staffers", 
-     "More than 15 staffers"))
+  lvls = c("0 staffers",
+           "1-4 staffers", 
+           "5+ staffers")
+)
+
 
 
 ```
@@ -1688,54 +1736,83 @@ cat_cross(x = df,
 
 ### By Gender 
 ```{r, message = FALSE, echo = FALSE }
-cat_cross(x = df, 
-  question = seniority_level, 
+
+cat_cross(x = df %>% 
+               mutate(
+                 seniority_level_binned = case_when(
+                 seniority_level == "Entry-Level" ~ "Entry-Level",
+                 seniority_level == "Mid-Level" ~ "Mid-Level",
+                 seniority_level %in% c("Organization Head, President or C-Level", 
+                                        "Senior-Level, but not Department Head", 
+                                        "Department Head") ~ "Senior-Level", 
+                 seniority_level == "Other" ~ "Other", 
+                 seniority_level == "Freelance" ~ "Freelance"
+                 )
+                 ), 
+  question = seniority_level_binned, 
   cross_var = gender_bin, 
   order_by = "levels", 
-  lvls = c(
-     "Entry-Level",
-     "Mid-Level", 
-     "Senior-Level, but not Department Head", 
-     "Department Head", 
-     "Organization Head, President or C-Level", 
-      "Other",
-     "Freelance"))
+   lvls = c("Entry-Level",
+                         "Mid-Level",
+                         "Senior-Level", 
+                         "Other",
+                         "Freelance"))
 
 ```
 
 
 ### By Race 
 ```{r, message = FALSE, echo = FALSE }
-cat_cross(x = df, 
-  question = seniority_level, 
+
+
+cat_cross(x = df %>% 
+               mutate(
+                 seniority_level_binned = case_when(
+                 seniority_level == "Entry-Level" ~ "Entry-Level",
+                 seniority_level == "Mid-Level" ~ "Mid-Level",
+                 seniority_level %in% c("Organization Head, President or C-Level", 
+                                        "Senior-Level, but not Department Head", 
+                                        "Department Head") ~ "Senior-Level", 
+                 seniority_level == "Other" ~ "Other", 
+                 seniority_level == "Freelance" ~ "Freelance"
+                 )
+                 ), 
+  question = seniority_level_binned, 
   cross_var = race_bin2, 
   order_by = "levels", 
-  lvls = c(
-     "Entry-Level",
-     "Mid-Level", 
-     "Senior-Level, but not Department Head", 
-     "Department Head", 
-     "Organization Head, President or C-Level", 
-      "Other",
-     "Freelance")) 
+   lvls = c("Entry-Level",
+                         "Mid-Level",
+                         "Senior-Level", 
+                         "Other",
+                         "Freelance"))
 ```
 
 
 ### By Gender x Race
 
 ```{r, message = FALSE, echo = FALSE }
-cat_cross(x = df, 
-  question = seniority_level, 
+cat_cross(x = df %>% 
+               mutate(
+                 seniority_level_binned = case_when(
+                 seniority_level == "Entry-Level" ~ "Entry-Level",
+                 seniority_level == "Mid-Level" ~ "Mid-Level",
+                 seniority_level %in% c("Organization Head, President or C-Level", 
+                                        "Senior-Level, but not Department Head", 
+                                        "Department Head") ~ "Senior-Level", 
+                 seniority_level == "Other" ~ "Other", 
+                 seniority_level == "Freelance" ~ "Freelance"
+                 )
+                 ), 
+  question = seniority_level_binned, 
   cross_var = gender_race, 
   order_by = "levels", 
-  lvls = c(
-     "Entry-Level",
-     "Mid-Level", 
-     "Senior-Level, but not Department Head", 
-     "Department Head", 
-     "Organization Head, President or C-Level", 
-      "Other",
-     "Freelance"))
+   lvls = c("Entry-Level",
+                         "Mid-Level",
+                         "Senior-Level", 
+                         "Other",
+                         "Freelance"))
+
+
 
 ```
 
